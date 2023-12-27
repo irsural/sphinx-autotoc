@@ -172,7 +172,7 @@ def _iter_dirs(docs_directory: Path, cfg: Config) -> Iterator[tuple[Path, dict[P
     :return: Кортеж из пути до папки и отсортированного содержимого этой папки.
     """
     mp = _flatmap(docs_directory, cfg)
-    skeys = sorted(mp.keys())
+    skeys = sorted(mp.keys(), key=lambda k: (len(k.parts), k.stem))
     for root in skeys:
         sub = mp[root]
         docs = {}
