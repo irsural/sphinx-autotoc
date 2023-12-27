@@ -4,8 +4,8 @@ from pathlib import Path
 from collections import defaultdict
 from typing import Iterator
 from sphinx.util import logging
-from sphinx.application import Sphinx
 from sphinx.config import Config
+from sphinx.application import Sphinx
 
 logger = logging.getLogger(__name__)
 SPHINX_SERVICE_FILE_PREFIX = "service"
@@ -36,11 +36,11 @@ TOCTREE = """
 
 
 def run_make_indexes(app: Sphinx) -> None:
-    logger.info('Running make_indexes...')
     make_indexes(app.srcdir, app.config)
 
 
 def setup(app: Sphinx) -> None:
+    logger.info('Running make_indexes...')
     app.connect('builder-inited', run_make_indexes)
 
 
