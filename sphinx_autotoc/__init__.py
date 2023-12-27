@@ -147,7 +147,7 @@ def _make_search_paths(root: Path, f: list[Path]) -> str:
     :return: Строка путей, разделённая символом \f.
     """
     search_paths = []
-    for file in f:
+    for file in sorted(f, key=lambda x: x.stem.replace("service.", "")):
         p = Path(root.name)
         if file.is_dir():
             p /= _get_dir_index(file).name
