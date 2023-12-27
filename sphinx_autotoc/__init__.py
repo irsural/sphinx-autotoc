@@ -151,10 +151,12 @@ def _make_search_paths(root: Path, f: list[Path]) -> str:
     search_paths = []
     for file in sorted(f, key=lambda x: x.stem.replace("service.", "")):
         p = Path(root.name)
-        if file.is_dir():
+        if file.is_dir() and file.parent == root:
             p /= _get_dir_index(file).name
-        else:
+        elif not file.is_dir():
             p /= file.name
+        else:
+            continue
         if p.as_posix() not in search_paths:
             search_paths.append(p.as_posix())
 
