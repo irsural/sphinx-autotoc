@@ -4,7 +4,7 @@ version = "0.0.1"
 authors = [
   { name="IRS Ural" },
 ]
-description = "Расширение для Sphinx для создания сервисных страниц и оглавлений (TOC)"
+description = "Расширение для Sphinx для создания оглавлений (TOC)"
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
