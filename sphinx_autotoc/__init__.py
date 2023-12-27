@@ -10,7 +10,7 @@ from sphinx.application import Sphinx
 logger = logging.getLogger(__name__)
 SPHINX_SERVICE_FILE_PREFIX = "service"
 SPHINX_INDEX_FILE_NAME = f"{SPHINX_SERVICE_FILE_PREFIX}.index.rst"
-IGNORE_LIST = {".git", ".idea", "logs", ".venv"}
+IGNORE_LIST = {".git", ".idea", "logs", ".venv", ".vscode"}
 NAV_PATTERN = """
 {dirname}
 ==========
