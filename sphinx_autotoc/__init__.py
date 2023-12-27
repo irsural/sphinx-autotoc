@@ -36,7 +36,7 @@ TOCTREE = """
 
 
 def run_make_indexes(app: Sphinx) -> None:
-    make_indexes(app.srcdir, app.config)
+    make_indexes(Path(app.srcdir), app.config)
 
 
 def setup(app: Sphinx) -> None:
