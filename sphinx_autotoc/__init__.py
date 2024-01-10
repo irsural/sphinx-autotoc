@@ -37,7 +37,6 @@ TOCTREE = """
 
 def run_make_indexes(app: Sphinx) -> None:
     app.config["root_doc"] = "service.index"
-    app.config["exclude_patterns"].extend(IGNORE_LIST)
     make_indexes(Path(app.srcdir), app.config)
 
 
