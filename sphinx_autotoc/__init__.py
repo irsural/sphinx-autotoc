@@ -244,7 +244,7 @@ def _list_files(docs_directory: Path) -> set[Path]:
     result = set()
 
     def _should_ignore(p: Path) -> bool:
-        return any(ignored in str(p) for ignored in IGNORE_LIST)
+        return any(part in IGNORE_LIST for part in p.parts)
 
     for root, dirs, files in os.walk(docs_directory):
         if _should_ignore(Path(root)):
