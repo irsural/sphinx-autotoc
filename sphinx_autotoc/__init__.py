@@ -3,14 +3,17 @@ import re
 from pathlib import Path
 from collections import defaultdict
 from typing import Iterator
+
 from sphinx.util import logging
 from sphinx.config import Config
 from sphinx.application import Sphinx
+from shutil import move
+from time import sleep
 
 logger = logging.getLogger(__name__)
 SPHINX_SERVICE_FILE_PREFIX = "service"
 SPHINX_INDEX_FILE_NAME = f"{SPHINX_SERVICE_FILE_PREFIX}.index.rst"
-IGNORE_LIST = {".git", ".idea", "logs", ".venv", ".vscode", '_autosummary'}
+IGNORE_LIST = {".git", ".idea", "logs", ".venv", ".vscode"}
 NAV_PATTERN = """
 {dirname}
 ==========
@@ -42,7 +45,8 @@ def run_make_indexes(app: Sphinx) -> None:
 
 def setup(app: Sphinx) -> None:
     logger.info('Running make_indexes...')
-    app.connect('builder-inited', run_make_indexes)
+
+    app.connect('builder-inited', run_make_indexes, 250)
 
 
 def make_indexes(docs_directory: Path, cfg: Config) -> None:
@@ -50,14 +54,26 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
     :param docs_directory: Путь к папке с документацией.
     :param cfg: Конфигурация Sphinx.
     """
+    prev_file_path = module_name = file_path = None
+    if "sphinx.ext.autosummary" in cfg.extensions:
+        logger.info("autosummary found!")
+        module_name, file_path = parse_autosummary(docs_directory)
+        if file_path:
+            move(file_path, file_path.parent)
+            prev_file_path = file_path
+            file_path = file_path.parent / file_path.name
+            logger.info(f"found autosummary file at {prev_file_path}, moved to {file_path}")
     main_page = MAIN_PAGE
     index = docs_directory / SPHINX_INDEX_FILE_NAME
     index_md = (docs_directory / SPHINX_INDEX_FILE_NAME).with_suffix(".md")
+
     if index_md.exists():
         os.remove(index_md)
     for root, sub_dict in _iter_dirs(docs_directory, cfg):
         main_page_dirs = []
         for sub, docs in sub_dict.items():
+            if sub.name == "_autosummary":
+                continue
             if sub != root:
                 # Если sub == root то, директория не содержит вложенных директорий
                 # В содержании данная директория показа как группа, но не
@@ -70,6 +86,41 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
 
     with open(index, "w", encoding="utf8") as f:
         f.write(main_page.format(project=cfg.project, dop="=" * len(cfg.project)))
+
+    if module_name and file_path and prev_file_path:
+        logger.info("working")
+        autosummary_index = _get_dir_index(file_path.parent)
+        if autosummary_index.parent == docs_directory:
+            autosummary_index = index
+        with open(autosummary_index, 'r+', encoding="utf8") as f:
+            f.seek(0)
+            lines = f.readlines()
+            for i, line in enumerate(lines):
+                if file_path.name in line:
+                    lines[i] = f"   API reference <_autosummary/{module_name}>\n"
+                    logger.info(f"found {file_path.name} in {autosummary_index} at {i}:{line}")
+            f.seek(0)
+            f.writelines(lines)
+            f.truncate()
+        sleep(2)
+        move(file_path, prev_file_path.parent)
+
+
+def parse_autosummary(root: Path) -> tuple[str, Path] | tuple[None, None]:
+    parent_dir = root.parent
+    for file in parent_dir.glob('*.rst'):
+        with open(file, 'r') as f:
+            lines = f.readlines()
+            found_autosummary = False
+            for i in range(len(lines)):
+                if '.. autosummary::' in lines[i]:
+                    found_autosummary = True
+                elif found_autosummary and ':recursive:' in lines[i]:
+                    for j in range(i + 1, len(lines)):
+                        next_line = lines[j].strip()
+                        if len(next_line) > 1 and not next_line.startswith(':'):
+                            return next_line, file
+    return None, None
 
 
 def _add_to_main_page(
