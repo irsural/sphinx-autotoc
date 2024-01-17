@@ -3,6 +3,7 @@ import re
 from pathlib import Path
 from collections import defaultdict
 from typing import Iterator
+import glob
 
 from sphinx.util import logging
 from sphinx.config import Config
@@ -54,15 +55,11 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
     :param docs_directory: Путь к папке с документацией.
     :param cfg: Конфигурация Sphinx.
     """
-    prev_file_path = module_name = file_path = None
+    module_name = file_path = None
     if "sphinx.ext.autosummary" in cfg.extensions:
         logger.info("autosummary found!")
-        module_name, file_path = parse_autosummary(docs_directory)
-        if file_path:
-            move(file_path, file_path.parent)
-            prev_file_path = file_path
-            file_path = file_path.parent / file_path.name
-            logger.info(f"found autosummary file at {prev_file_path}, moved to {file_path}")
+        module_name, file_path = parse_autosummary(docs_directory)  # FIXME
+    logger.info(f"module_name: {module_name}, file_path: {file_path}")
     main_page = MAIN_PAGE
     index = docs_directory / SPHINX_INDEX_FILE_NAME
     index_md = (docs_directory / SPHINX_INDEX_FILE_NAME).with_suffix(".md")
@@ -87,7 +84,7 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
     with open(index, "w", encoding="utf8") as f:
         f.write(main_page.format(project=cfg.project, dop="=" * len(cfg.project)))
 
-    if module_name and file_path and prev_file_path:
+    if module_name and file_path:
         logger.info("working")
         autosummary_index = _get_dir_index(file_path.parent)
         if autosummary_index.parent == docs_directory:
@@ -103,12 +100,11 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
             f.writelines(lines)
             f.truncate()
         sleep(2)
-        move(file_path, prev_file_path.parent)
 
 
 def parse_autosummary(root: Path) -> tuple[str, Path] | tuple[None, None]:
-    parent_dir = root.parent
-    for file in parent_dir.glob('*.rst'):
+    files = [Path(file) for file in glob.glob(f"{root}/**/*.rst", recursive=True)]
+    for file in files:
         with open(file, 'r') as f:
             lines = f.readlines()
             found_autosummary = False
@@ -184,7 +180,7 @@ def _get_dir_index(path: Path) -> Path:
     :param path: Путь до папки.
     :return: Путь до сервисного файла папки.
     """
-    return path.parent / f"{SPHINX_SERVICE_FILE_PREFIX}.{path.name}.rst"
+    return path / f"{SPHINX_SERVICE_FILE_PREFIX}.{path.name}.rst"
 
 
 def _make_search_paths(root: Path, f: list[Path]) -> str:
@@ -202,9 +198,9 @@ def _make_search_paths(root: Path, f: list[Path]) -> str:
     for file in sorted(f, key=lambda x: x.stem.replace("service.", "")):
         p = Path(root.name)
         if file.is_dir() and file.parent == root:
-            p /= _get_dir_index(file).name
+            p = p / file.name / _get_dir_index(file).name
         elif not file.is_dir():
-            p /= file.name
+            p = Path(file.name)
         else:
             continue
         if p.as_posix() not in search_paths:
