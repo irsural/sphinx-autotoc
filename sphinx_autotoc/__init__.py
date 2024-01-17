@@ -8,7 +8,6 @@ import glob
 from sphinx.util import logging
 from sphinx.config import Config
 from sphinx.application import Sphinx
-from shutil import move
 from time import sleep
 
 logger = logging.getLogger(__name__)
@@ -40,13 +39,14 @@ TOCTREE = """
 
 
 def run_make_indexes(app: Sphinx) -> None:
+    logger.info('Running make_indexes...')
     app.config["root_doc"] = "service.index"
     make_indexes(Path(app.srcdir), app.config)
 
 
 def setup(app: Sphinx) -> None:
-    logger.info('Running make_indexes...')
-
+    app.add_config_value("sphinx_autotoc_get_headers_from_subfolder", False, "html", bool)
+    app.add_config_value("sphinx_autotoc_header", "Содержание", "html", str)
     app.connect('builder-inited', run_make_indexes, 250)
 
 
@@ -58,14 +58,17 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
     module_name = file_path = None
     if "sphinx.ext.autosummary" in cfg.extensions:
         logger.info("autosummary found!")
-        module_name, file_path = parse_autosummary(docs_directory)  # FIXME
-    logger.info(f"module_name: {module_name}, file_path: {file_path}")
+        module_name, file_path = parse_autosummary(docs_directory)
+        logger.info(f"module_name: {module_name}, file_path: {file_path}")
     main_page = MAIN_PAGE
     index = docs_directory / SPHINX_INDEX_FILE_NAME
     index_md = (docs_directory / SPHINX_INDEX_FILE_NAME).with_suffix(".md")
+    irs_docs_style_header = cfg["sphinx_autotoc_get_headers_from_subfolder"]
+    header_text = cfg["sphinx_autotoc_header"]
 
     if index_md.exists():
         os.remove(index_md)
+    all_main_page_dirs = {}
     for root, sub_dict in _iter_dirs(docs_directory, cfg):
         main_page_dirs = []
         for sub, docs in sub_dict.items():
@@ -79,13 +82,21 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
                 main_page_dirs.append(sub)
             else:
                 main_page_dirs.extend(docs)
-        main_page = _add_to_main_page(root, main_page_dirs, main_page)
+        if irs_docs_style_header:
+            main_page = _add_to_main_page(root, main_page_dirs, main_page)
+        else:
+            all_main_page_dirs.update({root: main_page_dirs})
+    if not irs_docs_style_header:
+        paths = ""
+        for dir_path, dirs in all_main_page_dirs.items():
+            paths += _make_search_paths(dir_path, dirs, True)
+        main_page += TOCTREE.format(group_name=header_text, group_dirs=paths).replace("\f", "\n   ")
 
     with open(index, "w", encoding="utf8") as f:
         f.write(main_page.format(project=cfg.project, dop="=" * len(cfg.project)))
 
     if module_name and file_path:
-        logger.info("working")
+        logger.info("Working on autosummary reference...")
         autosummary_index = _get_dir_index(file_path.parent)
         if autosummary_index.parent == docs_directory:
             autosummary_index = index
@@ -95,7 +106,6 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
             for i, line in enumerate(lines):
                 if file_path.name in line:
                     lines[i] = f"   API reference <_autosummary/{module_name}>\n"
-                    logger.info(f"found {file_path.name} in {autosummary_index} at {i}:{line}")
             f.seek(0)
             f.writelines(lines)
             f.truncate()
@@ -132,7 +142,7 @@ def _add_to_main_page(
     :param main_page: Содержимое индексной страницы.
     :return main_page: Изменённое содержимое индексной страницы.
     """
-    search_paths = _make_search_paths(dir_path, dirs)
+    search_paths = _make_search_paths(dir_path, dirs, True)
     main_page += TOCTREE.format(
         group_name=dir_path.stem, group_dirs=search_paths
     ).replace("\f", "\n   ")
@@ -162,7 +172,7 @@ def _add_to_nav(path: Path, docs: list[Path]) -> None:
         dirname_with_no_heading_nums = pat.group(2)
     else:
         return
-    search_paths = _make_search_paths(path, docs)
+    search_paths = _make_search_paths(path, docs, False)
     with open(index_path.as_posix(), "w", encoding="utf-8") as f:
         f.write(
             NAV_PATTERN.format(
@@ -183,7 +193,7 @@ def _get_dir_index(path: Path) -> Path:
     return path / f"{SPHINX_SERVICE_FILE_PREFIX}.{path.name}.rst"
 
 
-def _make_search_paths(root: Path, f: list[Path]) -> str:
+def _make_search_paths(root: Path, f: list[Path], index: bool) -> str:
     """
     Создает пути к содержимому в папке.
 
@@ -195,17 +205,17 @@ def _make_search_paths(root: Path, f: list[Path]) -> str:
     :return: Строка путей, разделённая символом \f.
     """
     search_paths = []
-    for file in sorted(f, key=lambda x: x.stem.replace("service.", "")):
+    for file in f:
         p = Path(root.name)
         if file.is_dir() and file.parent == root:
             p = p / file.name / _get_dir_index(file).name
         elif not file.is_dir():
-            p = Path(file.name)
+            p = p / Path(file.name) if index else Path(file.name)
         else:
             continue
         if p.as_posix() not in search_paths:
             search_paths.append(p.as_posix())
-
+    search_paths.sort(key=lambda x: Path(x).stem.replace("service.", ""))
     return "\f".join(search_paths) + "\f"
 
 
