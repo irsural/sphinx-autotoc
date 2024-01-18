@@ -89,7 +89,7 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
     if not irs_docs_style_header:
         paths = ""
         for dir_path, dirs in all_main_page_dirs.items():
-            paths += _make_search_paths(dir_path, dirs, True)
+            paths += _make_search_paths(dir_path, dirs, True, False)
         main_page += TOCTREE.format(group_name=header_text, group_dirs=paths).replace("\f", "\n   ")
 
     with open(index, "w", encoding="utf8") as f:
@@ -142,7 +142,7 @@ def _add_to_main_page(
     :param main_page: Содержимое индексной страницы.
     :return main_page: Изменённое содержимое индексной страницы.
     """
-    search_paths = _make_search_paths(dir_path, dirs, True)
+    search_paths = _make_search_paths(dir_path, dirs, True, True)
     main_page += TOCTREE.format(
         group_name=dir_path.stem, group_dirs=search_paths
     ).replace("\f", "\n   ")
@@ -172,7 +172,7 @@ def _add_to_nav(path: Path, docs: list[Path]) -> None:
         dirname_with_no_heading_nums = pat.group(2)
     else:
         return
-    search_paths = _make_search_paths(path, docs, False)
+    search_paths = _make_search_paths(path, docs, False, True)
     with open(index_path.as_posix(), "w", encoding="utf-8") as f:
         f.write(
             NAV_PATTERN.format(
@@ -193,7 +193,7 @@ def _get_dir_index(path: Path) -> Path:
     return path / f"{SPHINX_SERVICE_FILE_PREFIX}.{path.name}.rst"
 
 
-def _make_search_paths(root: Path, f: list[Path], index: bool) -> str:
+def _make_search_paths(root: Path, f: list[Path], index: bool, irs_docs_style:bool) -> str:
     """
     Создает пути к содержимому в папке.
 
@@ -207,11 +207,15 @@ def _make_search_paths(root: Path, f: list[Path], index: bool) -> str:
     search_paths = []
     for file in f:
         p = Path(root.name)
+        tmp = "src" if irs_docs_style else ""
         if file.is_dir() and file.parent == root:
-            p = p / file.name / _get_dir_index(file).name
+            p = tmp / p / file.name / _get_dir_index(file).name if index else Path(file.name) / _get_dir_index(file).name
         elif not file.is_dir():
-            p = p / Path(file.name) if index else Path(file.name)
+            p = tmp / p / file.name if index else Path(file.name)
         else:
+            continue
+
+        if p.name.startswith("service.") and p.name.split(".")[1] == root.name:
             continue
         if p.as_posix() not in search_paths:
             search_paths.append(p.as_posix())
@@ -227,8 +231,13 @@ def _iter_dirs(docs_directory: Path, cfg: Config) -> Iterator[tuple[Path, dict[P
     :param docs_directory: Папка с документацией.
     :return: Кортеж из пути до папки и отсортированного содержимого этой папки.
     """
+    if cfg["sphinx_autotoc_get_headers_from_subfolder"]:
+        src_directory = docs_directory / 'src'
+        if src_directory.exists() and src_directory.is_dir():
+            docs_directory = src_directory
+
     mp = _flatmap(docs_directory, cfg)
-    skeys = sorted(mp.keys(), key=lambda k: (len(k.parts), k.stem))
+    skeys = sorted(mp.keys())
     for root in skeys:
         sub = mp[root]
         docs = {}
