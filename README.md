@@ -1,20 +1,20 @@
-# Sphinx-Autotoc
+# sphinx-autotoc
 
-Sphinx-Autotoc - это расширение Python для Sphinx, которое позволяет автоматически создавать оглавления (TOC).
+**sphinx-autotoc** - это расширение [Sphinx](https://www.sphinx-doc.org/en/master/)
+для автоматической генерации содержания сайта 
+([toctree](https://www.sphinx-doc.org/en/master/usage/restructuredtext/directives.html#table-of-contents)).
 
-Для корректного использования расширения файлы документации должны находиться в папке `src` в корне документации.
+Для корректной работы расширения, исходные файлы документации должны находиться в папке `src`, в корне документации.
 
-## Установка
+## Использование
 
-Для установки Sphinx-Autotoc используется pip:
+### Установка
 
 ```bash
 pip install sphinx-autotoc
 ``` 
 
-## Использование
-
-Для использования Sphinx-Autotoc необходимо добавить его в конфигурационный файл Sphinx (conf.py):
+Расширение добавляется в файл конфигурации sphinx (**conf.py**), так же как и другие расширения sphinx:
 
 ```python
 extensions = [
@@ -24,17 +24,49 @@ extensions = [
 ]
 ```
 
-У расширения есть два параметра, которые также можно задать в conf.py
+### Настройка
 
-* `sphinx_autotoc_get_headers_from_subfolder` - формат заголовков первого уровня, бинарное значение (True или False).  
-   * При `False` (по умолчанию) создаётся один заголовок с текстом из параметра `sphinx_autotoc_header`  
-   * При `True` создаётся по одному заголовку для каждой папки в `src`, с текстом - названием папки
-     ВНИМАНИЕ! При использовании `sphinx_autotoc_get_headers_from_subfolder = True` файлы документации из `src` в содержании указываться не будут!
-* `sphinx_autotoc_header` - текст заголовка при отключенном `sphinx_autotoc_get_headers_from_subfolder`, текстовое значение  
-   * По умолчанию - "Содержание".
+У расширения есть два параметра, которые задаются переменными в **conf.py**.
+
+#### ``sphinx_autotoc_get_headers_from_subfolder``
+
+Определяет способ генерации заголовков в содержании.
+
+Заголовок содержания - это некликабельный текст, с помощью которого можно 
+разделить содержание на логические части.
+
+Возможные значения:
+
+- ``False``
+
+  В содержании будет один заголовок, текст для которого указывается в ``sphinx_autotoc_header`` (см. ниже),
+
+  Каждая папка внутри **src** станет кликабельным элементом содержания.
+
+  Отдельные документы (.rst, .md) внутри папки **src** также будут отображаться в содержании.
+  
+- ``True``
+
+  Количество заголовков в содержании будет равно количеству папок в папке **src**. Текст заголовков будет
+  взят из названий этих папок.
+
+  Папки второго уровня (например, **src/header_folder/content_folder**) станут кликабельными элементами
+  содержания.
+  
+  Отдельные документы внутри папки **src** не будут отображаться в содержании.
+
+Значение по умолчанию - ``False``.
+
+#### ``sphinx_autotoc_header`` 
+
+Используется только при ``sphinx_autotoc_get_headers_from_subfolder = False``.
+
+Задает текст заголовка. Значение по умолчанию - **Содержание**.
+
+## Пример
 
 
-Для проекта с структурой файлов
+
 ```bash
 project
 ├── conf.py
@@ -58,8 +90,14 @@ project
 ```
 содержание без sphinx_autotoc_get_headers_from_subfolder будет следующим:
 
+![sphinx_autotoc_get_headers_from_subfolder = False](https://imgur.com/xKokPBB.png)
 
-![Содержание при sphinx_autotoc_get_headers_from_subfolder = False](https://imgur.com/xKokPBB.png)
+```python
+sphinx_autotoc_get_headers_from_subfolder = False 
+sphinx_autotoc_header = "Содержание"
+```
+      
+
 
 С включенным sphinx_autotoc_get_headers_from_subfolder содержание будет таким:
 
