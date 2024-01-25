@@ -65,41 +65,47 @@ extensions = [
 
 ## Пример
 
-
+Рассмотрим проект со следующей структурой:
 
 ```bash
 project
 ├── conf.py
-├── index.rst
-├── requirements.txt
-├── src
-│   ├── root.md
-│   ├── data
-│   │   ├── data1.rst
-│   │   └── data2.rst
-│   ├── another
-│   │   ├── instruction.rst
-│   │   └── website.rst
-│   └── hasinner
-│       ├── somefile.md
-│       └── inner
-│           └── needed_data.rst
-└── _static_local
-    └── css
-        └── custom.css
+├── ...
+└── src
+    ├── root.md
+    ├── data
+    │   ├── data1.rst
+    │   └── data2.rst
+    ├── another
+    │   ├── instruction.rst
+    │   └── website.rst
+    └── hasinner
+        ├── somefile.md
+        └── inner
+            └── needed_data.rst
 ```
-содержание без sphinx_autotoc_get_headers_from_subfolder будет следующим:
+
+### Один заголовок
+
+Содержимое **conf.py**:
+
+```python
+sphinx_autotoc_get_headers_from_subfolder = False
+sphinx_autotoc_header = "Содержание"
+```
+
+Вид сгенерированного содержания:
 
 ![sphinx_autotoc_get_headers_from_subfolder = False](https://imgur.com/xKokPBB.png)
 
+### Несколько заголовков
+
+Содержимое **conf.py**:
+
 ```python
-sphinx_autotoc_get_headers_from_subfolder = False 
-sphinx_autotoc_header = "Содержание"
+sphinx_autotoc_get_headers_from_subfolder = True
 ```
-      
 
+Вид сгенерированного содержания:
 
-С включенным sphinx_autotoc_get_headers_from_subfolder содержание будет таким:
-
-
-![Содержание при sphinx_autotoc_get_headers_from_subfolder = True](https://imgur.com/QLYnsIC.png)
+![get_headers_from_subfolder = True](https://imgur.com/QLYnsIC.png)
