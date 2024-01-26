@@ -26,7 +26,7 @@ extensions = [
 
 ### Настройка
 
-У расширения есть два параметра, которые задаются переменными в **conf.py**.
+У расширения есть три параметра, которые задаются переменными в **conf.py**.
 
 #### ``sphinx_autotoc_get_headers_from_subfolder``
 
@@ -63,6 +63,32 @@ extensions = [
 
 Задает текст заголовка. Значение по умолчанию - **Содержание**.
 
+#### ``sphinx_autotoc_trim_folder_numbers``
+
+Определяет, нужно ли удалять числа из названий папок в содержании.
+
+Возможные значения: 
+
+- ``False``
+
+  В содержание сайта выводится полное название папки
+
+- ``True``
+
+  В содержании сайта выводится название папки без числа в начале
+
+  Папки должны быть пронумерованы по аналогии с файлами:
+  
+  ``<folder_order>. <folder_name>``
+  
+  , где:
+  
+    * **<folder_order>** - число, определяющее порядок папки в содержании сайта
+
+    * **<folder_name>** - название папки
+
+Значение по умолчанию - ``False``
+
 ## Пример
 
 Рассмотрим проект со следующей структурой:
@@ -73,15 +99,15 @@ project
 ├── ...
 └── src
     ├── root.md
-    ├── data
+    ├── 1. data
     │   ├── data1.rst
     │   └── data2.rst
-    ├── another
+    ├── 2. another
     │   ├── instruction.rst
     │   └── website.rst
     └── hasinner
-        ├── somefile.md
-        └── inner
+        ├── 1. somefile.md
+        └── 2. inner
             └── needed_data.rst
 ```
 
@@ -96,13 +122,40 @@ sphinx_autotoc_header = "Содержание"
 
 Вид сгенерированного содержания:
 
-![sphinx_autotoc_get_headers_from_subfolder = False](https://imgur.com/xKokPBB.png)
+![no subfolders, no numbers](https://i.imgur.com/rL5p5fI.png)
 
 ### Несколько заголовков
 
 Содержимое **conf.py**:
 
 ```python
+sphinx_autotoc_get_headers_from_subfolder = False
+```
+
+Вид сгенерированного содержания:
+
+![subfolders, no numbers](https://i.imgur.com/6GoK1hj.png)
+
+### Один заголовок, отключены числа в содержании
+
+Содержимое **conf.py**:
+
+```python
+sphinx_autotoc_trim_folder_numbers = True
+sphinx_autotoc_get_headers_from_subfolder = False
+sphinx_autotoc_header = "Содержание"
+```
+
+Вид сгенерированного содержания:
+
+![sphinx_autotoc_get_headers_from_subfolder = False](https://imgur.com/xKokPBB.png)
+
+### Несколько заголовков, отключены числа в содержании
+
+Содержимое **conf.py**:
+
+```python
+sphinx_autotoc_trim_folder_numbers = True
 sphinx_autotoc_get_headers_from_subfolder = True
 ```
 
