@@ -45,6 +45,7 @@ def run_make_indexes(app: Sphinx) -> None:
 
 
 def setup(app: Sphinx) -> None:
+    app.add_config_value("sphinx_autotoc_trim_folder_numbers", False, "html", bool)
     app.add_config_value("sphinx_autotoc_get_headers_from_subfolder", False, "html", bool)
     app.add_config_value("sphinx_autotoc_header", "Содержание", "html", str)
     app.connect('builder-inited', run_make_indexes, 250)
@@ -65,6 +66,7 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
     index_md = (docs_directory / SPHINX_INDEX_FILE_NAME).with_suffix(".md")
     irs_docs_style_header = cfg["sphinx_autotoc_get_headers_from_subfolder"]
     header_text = cfg["sphinx_autotoc_header"]
+    trim = cfg["sphinx_autotoc_trim_folder_numbers"]
 
     if index_md.exists():
         os.remove(index_md)
@@ -78,12 +80,12 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
                 # Если sub == root то, директория не содержит вложенных директорий
                 # В содержании данная директория показа как группа, но не
                 # является таковой.
-                _add_to_nav(sub, docs)
+                _add_to_nav(sub, docs, trim)
                 main_page_dirs.append(sub)
             else:
                 main_page_dirs.extend(docs)
         if irs_docs_style_header:
-            main_page = _add_to_main_page(root, main_page_dirs, main_page)
+            main_page = _add_to_main_page(root, main_page_dirs, main_page, trim)
         else:
             all_main_page_dirs.update({root: main_page_dirs})
     if not irs_docs_style_header:
@@ -133,6 +135,7 @@ def _add_to_main_page(
     dir_path: Path,
     dirs: list[Path],
     main_page: str,
+    trim: bool
 ) -> str:
     """
     Добавляет дерево содержания папки в индексную страницу проекта.
@@ -143,13 +146,18 @@ def _add_to_main_page(
     :return main_page: Изменённое содержимое индексной страницы.
     """
     search_paths = _make_search_paths(dir_path, dirs, True, True)
+    match = re.match(r"^\d+\.\s(\S.*)", dir_path.name, re.DOTALL)
+    if trim and match:
+        dirname = match.group(1)
+    else:
+        dirname = dir_path.name
     main_page += TOCTREE.format(
-        group_name=dir_path.stem, group_dirs=search_paths
+        group_name=dirname, group_dirs=search_paths
     ).replace("\f", "\n   ")
     return main_page
 
 
-def _add_to_nav(path: Path, docs: list[Path]) -> None:
+def _add_to_nav(path: Path, docs: list[Path], trim: bool) -> None:
     """
     Добавляет рядом с папкой её сервисный файл.
 
@@ -166,17 +174,16 @@ def _add_to_nav(path: Path, docs: list[Path]) -> None:
             content = f.read()
 
     index_path = _get_dir_index(path)
-
-    pat = re.search(r"(\d\.\s)?(.*)", path.stem)  # 1. Text
-    if pat:
-        dirname_with_no_heading_nums = pat.group(2)
+    match = re.match(r"^\d+\.\s(\S.*)", path.name, re.DOTALL)
+    if trim and match:
+        dirname = match.group(1)
     else:
-        return
+        dirname = path.name
     search_paths = _make_search_paths(path, docs, False, True)
     with open(index_path.as_posix(), "w", encoding="utf-8") as f:
         f.write(
             NAV_PATTERN.format(
-                dirname=dirname_with_no_heading_nums,
+                dirname=dirname,
                 search_paths=search_paths,
                 includes=content,
             ).replace("\f", "\n   ")
