@@ -146,11 +146,7 @@ def _add_to_main_page(
     :return main_page: Изменённое содержимое индексной страницы.
     """
     search_paths = _make_search_paths(dir_path, dirs, True, True)
-    match = re.match(r"^\d+\.\s(\S.*)", dir_path.name, re.DOTALL)
-    if trim and match:
-        dirname = match.group(1)
-    else:
-        dirname = dir_path.name
+    dirname = _check_leading_numbers(dir_path, need_to_trim_leading_numbers)
     main_page += TOCTREE.format(
         group_name=dirname, group_dirs=search_paths
     ).replace("\f", "\n   ")
@@ -174,11 +170,7 @@ def _add_to_nav(path: Path, docs: list[Path], need_to_trim_leading_numbers: bool
             content = f.read()
 
     index_path = _get_dir_index(path)
-    match = re.match(r"^\d+\.\s(\S.*)", path.name, re.DOTALL)
-    if trim and match:
-        dirname = match.group(1)
-    else:
-        dirname = path.name
+    dirname = _check_leading_numbers(path, need_to_trim_leading_numbers)
     search_paths = _make_search_paths(path, docs, False, True)
     with open(index_path.as_posix(), "w", encoding="utf-8") as f:
         f.write(
@@ -188,6 +180,15 @@ def _add_to_nav(path: Path, docs: list[Path], need_to_trim_leading_numbers: bool
                 includes=content,
             ).replace("\f", "\n   ")
         )
+
+
+def _check_leading_numbers(path: Path, need_to_trim_leading_numbers: bool) -> str:
+    match = re.match(r"^\d+\.\s(\S.*)", path.name, re.DOTALL)
+    if need_to_trim_leading_numbers and match:
+        dirname = match.group(1)
+    else:
+        dirname = path.name
+    return dirname
 
 
 def _get_dir_index(path: Path) -> Path:
