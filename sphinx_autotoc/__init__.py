@@ -184,19 +184,12 @@ def _add_to_nav(path: Path, docs: list[Path], trim_folder_numbers: bool) -> None
 
 def _check_leading_numbers(path: Path, trim_folder_numbers: bool) -> str:
     path_name = path.name
-    if not need_to_trim_leading_numbers:
-        return path_name
-    for i in range(len(path_name)):
-        try:
-            int(path_name[i])
-        except ValueError:
-            try:
-                if path_name[i+1] == '.' and path_name[i+2] == ' ':
-                    path_name = path_name[i+2:]
-            except IndexError:
-                pass
-            finally:
-                return path_name
+    if trim_folder_numbers:
+        split_path = path_name.split(".")
+        if split_path[0].isdigit() and len(split_path) > 1:
+            split_path[1] = split_path[1].lstrip()
+            return ".".join(split_path[1:])
+    return path_name
 
 
 def _get_dir_index(path: Path) -> Path:
