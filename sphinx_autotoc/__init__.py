@@ -183,12 +183,20 @@ def _add_to_nav(path: Path, docs: list[Path], need_to_trim_leading_numbers: bool
 
 
 def _check_leading_numbers(path: Path, need_to_trim_leading_numbers: bool) -> str:
-    match = re.match(r"^\d+\.\s(\S.*)", path.name, re.DOTALL)
-    if need_to_trim_leading_numbers and match:
-        dirname = match.group(1)
-    else:
-        dirname = path.name
-    return dirname
+    path_name = path.name
+    if not need_to_trim_leading_numbers:
+        return path_name
+    for i in range(len(path_name)):
+        try:
+            int(path_name[i])
+        except ValueError:
+            try:
+                if path_name[i+1] == '.' and path_name[i+2] == ' ':
+                    path_name = path_name[i+2:]
+            except IndexError:
+                pass
+            finally:
+                return path_name
 
 
 def _get_dir_index(path: Path) -> Path:
