@@ -64,9 +64,9 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
     main_page = MAIN_PAGE
     index = docs_directory / SPHINX_INDEX_FILE_NAME
     index_md = (docs_directory / SPHINX_INDEX_FILE_NAME).with_suffix(".md")
-    header_style_is_irs_docs = cfg["sphinx_autotoc_get_headers_from_subfolder"]
+    get_headers_from_subfolder = cfg["sphinx_autotoc_get_headers_from_subfolder"]
     header_text = cfg["sphinx_autotoc_header"]
-    need_to_trim_leading_numbers = cfg["sphinx_autotoc_trim_folder_numbers"]
+    trim_folder_numbers = cfg["sphinx_autotoc_trim_folder_numbers"]
 
     if index_md.exists():
         os.remove(index_md)
@@ -80,15 +80,15 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
                 # Если sub == root то, директория не содержит вложенных директорий
                 # В содержании данная директория показа как группа, но не
                 # является таковой.
-                _add_to_nav(sub, docs, need_to_trim_leading_numbers)
+                _add_to_nav(sub, docs, trim_folder_numbers)
                 main_page_dirs.append(sub)
             else:
                 main_page_dirs.extend(docs)
-        if header_style_is_irs_docs:
-            main_page = _add_to_main_page(root, main_page_dirs, main_page, need_to_trim_leading_numbers)
+        if get_headers_from_subfolder:
+            main_page = _add_to_main_page(root, main_page_dirs, main_page, trim_folder_numbers)
         else:
             all_main_page_dirs.update({root: main_page_dirs})
-    if not header_style_is_irs_docs:
+    if not get_headers_from_subfolder:
         paths = ""
         for dir_path, dirs in all_main_page_dirs.items():
             paths += _make_search_paths(dir_path, dirs, True, False)
@@ -135,7 +135,7 @@ def _add_to_main_page(
     dir_path: Path,
     dirs: list[Path],
     main_page: str,
-    need_to_trim_leading_numbers: bool
+    trim_folder_numbers: bool
 ) -> str:
     """
     Добавляет дерево содержания папки в индексную страницу проекта.
@@ -146,14 +146,14 @@ def _add_to_main_page(
     :return main_page: Изменённое содержимое индексной страницы.
     """
     search_paths = _make_search_paths(dir_path, dirs, True, True)
-    dirname = _check_leading_numbers(dir_path, need_to_trim_leading_numbers)
+    dirname = _check_leading_numbers(dir_path, trim_folder_numbers)
     main_page += TOCTREE.format(
         group_name=dirname, group_dirs=search_paths
     ).replace("\f", "\n   ")
     return main_page
 
 
-def _add_to_nav(path: Path, docs: list[Path], need_to_trim_leading_numbers: bool) -> None:
+def _add_to_nav(path: Path, docs: list[Path], trim_folder_numbers: bool) -> None:
     """
     Добавляет рядом с папкой её сервисный файл.
 
@@ -170,7 +170,7 @@ def _add_to_nav(path: Path, docs: list[Path], need_to_trim_leading_numbers: bool
             content = f.read()
 
     index_path = _get_dir_index(path)
-    dirname = _check_leading_numbers(path, need_to_trim_leading_numbers)
+    dirname = _check_leading_numbers(path, trim_folder_numbers)
     search_paths = _make_search_paths(path, docs, False, True)
     with open(index_path.as_posix(), "w", encoding="utf-8") as f:
         f.write(
@@ -182,7 +182,7 @@ def _add_to_nav(path: Path, docs: list[Path], need_to_trim_leading_numbers: bool
         )
 
 
-def _check_leading_numbers(path: Path, need_to_trim_leading_numbers: bool) -> str:
+def _check_leading_numbers(path: Path, trim_folder_numbers: bool) -> str:
     path_name = path.name
     if not need_to_trim_leading_numbers:
         return path_name
