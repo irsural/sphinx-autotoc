@@ -64,9 +64,9 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
     main_page = MAIN_PAGE
     index = docs_directory / SPHINX_INDEX_FILE_NAME
     index_md = (docs_directory / SPHINX_INDEX_FILE_NAME).with_suffix(".md")
-    irs_docs_style_header = cfg["sphinx_autotoc_get_headers_from_subfolder"]
+    header_style_is_irs_docs = cfg["sphinx_autotoc_get_headers_from_subfolder"]
     header_text = cfg["sphinx_autotoc_header"]
-    trim = cfg["sphinx_autotoc_trim_folder_numbers"]
+    need_to_trim_leading_numbers = cfg["sphinx_autotoc_trim_folder_numbers"]
 
     if index_md.exists():
         os.remove(index_md)
@@ -80,15 +80,15 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
                 # Если sub == root то, директория не содержит вложенных директорий
                 # В содержании данная директория показа как группа, но не
                 # является таковой.
-                _add_to_nav(sub, docs, trim)
+                _add_to_nav(sub, docs, need_to_trim_leading_numbers)
                 main_page_dirs.append(sub)
             else:
                 main_page_dirs.extend(docs)
-        if irs_docs_style_header:
-            main_page = _add_to_main_page(root, main_page_dirs, main_page, trim)
+        if header_style_is_irs_docs:
+            main_page = _add_to_main_page(root, main_page_dirs, main_page, need_to_trim_leading_numbers)
         else:
             all_main_page_dirs.update({root: main_page_dirs})
-    if not irs_docs_style_header:
+    if not header_style_is_irs_docs:
         paths = ""
         for dir_path, dirs in all_main_page_dirs.items():
             paths += _make_search_paths(dir_path, dirs, True, False)
@@ -135,7 +135,7 @@ def _add_to_main_page(
     dir_path: Path,
     dirs: list[Path],
     main_page: str,
-    trim: bool
+    need_to_trim_leading_numbers: bool
 ) -> str:
     """
     Добавляет дерево содержания папки в индексную страницу проекта.
@@ -157,7 +157,7 @@ def _add_to_main_page(
     return main_page
 
 
-def _add_to_nav(path: Path, docs: list[Path], trim: bool) -> None:
+def _add_to_nav(path: Path, docs: list[Path], need_to_trim_leading_numbers: bool) -> None:
     """
     Добавляет рядом с папкой её сервисный файл.
 
