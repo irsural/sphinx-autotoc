@@ -26,7 +26,7 @@ extensions = [
 
 ### Настройка
 
-У расширения есть три параметра, которые задаются переменными в **conf.py**.
+У расширения есть 3 параметра, которые задаются переменными в **conf.py**.
 
 #### ``sphinx_autotoc_get_headers_from_subfolder``
 
@@ -65,7 +65,11 @@ extensions = [
 
 #### ``sphinx_autotoc_trim_folder_numbers``
 
-Определяет, нужно ли удалять числа из названий папок в содержании.
+По умолчанию сортировка папок в содержании происходит по алфавиту.
+
+Для того чтобы папки в содержании располагались в нужном порядке, можно добавить числа в начало названий папок.
+
+Данный флаг определяет, нужно ли удалять числа из названий папок в содержании.
 
 Возможные значения: 
 
@@ -122,7 +126,7 @@ sphinx_autotoc_header = "Содержание"
 
 Вид сгенерированного содержания:
 
-![no subfolders, no numbers](https://i.imgur.com/rL5p5fI.png)
+![no subfolders, no trimming numbers](docs/images/no_sf_no_trim.png)
 
 ### Несколько заголовков
 
@@ -134,7 +138,7 @@ sphinx_autotoc_get_headers_from_subfolder = False
 
 Вид сгенерированного содержания:
 
-![subfolders, no numbers](https://i.imgur.com/6GoK1hj.png)
+![subfolders, no trimming numbers](docs/images/sf_no_trim.png)
 
 ### Один заголовок, отключены числа в содержании
 
@@ -148,7 +152,7 @@ sphinx_autotoc_header = "Содержание"
 
 Вид сгенерированного содержания:
 
-![sphinx_autotoc_get_headers_from_subfolder = False](https://imgur.com/xKokPBB.png)
+![no subfolders, trim numbers](docs/images/no_sf_trim.png)
 
 ### Несколько заголовков, отключены числа в содержании
 
@@ -161,4 +165,4 @@ sphinx_autotoc_get_headers_from_subfolder = True
 
 Вид сгенерированного содержания:
 
-![get_headers_from_subfolder = True](https://imgur.com/QLYnsIC.png)
+![subfolders, trim numbers](docs/images/sf_trim.png)
