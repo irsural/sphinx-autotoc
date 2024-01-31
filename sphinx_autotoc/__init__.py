@@ -114,6 +114,11 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
 
 
 def parse_autosummary(root: Path) -> tuple[str, Path] | tuple[None, None]:
+    """
+    Парсит файлы .rst в поисках автосаммари.
+    :param root: Путь к папке с сайтом.
+    :return: Имя модуля и путь к файлу с автосаммари.
+    """
     files = [Path(file) for file in glob.glob(f"{root}/**/*.rst", recursive=True)]
     for file in files:
         with open(file, 'r') as f:
@@ -142,6 +147,7 @@ def _add_to_main_page(
     :param dir_path: Путь к папке.
     :param dirs: Список вложенных папок.
     :param main_page: Содержимое индексной страницы.
+    :param trim_folder_numbers: Удалять ли номера папок.
     :return main_page: Изменённое содержимое индексной страницы.
     """
     search_paths = _make_search_paths(dir_path, dirs, True, True)
@@ -161,6 +167,7 @@ def _add_to_nav(path: Path, docs: list[Path], trim_folder_numbers: bool) -> None
 
     :param path: Путь до папки.
     :param docs: Список файлов в папке.
+    :param trim_folder_numbers: Удалять ли номера папок.
     """
     content = ""
     include_file = path / "README.md"
@@ -182,6 +189,12 @@ def _add_to_nav(path: Path, docs: list[Path], trim_folder_numbers: bool) -> None
 
 
 def _check_leading_numbers(path: Path, trim_folder_numbers: bool) -> str:
+    """
+    Проверяет, является ли папка нумерованной.
+    :param path: Путь до папки.
+    :param trim_folder_numbers: Удалять ли номера папок.
+    :return: Имя папки.
+    """
     path_name = path.name
     if trim_folder_numbers:
         number, name = path_name.split(".", maxsplit=1)
@@ -209,6 +222,8 @@ def _make_search_paths(root: Path, f: list[Path], index: bool, get_headers_from_
 
     :param root: Корневая папка.
     :param f: Список содержимого корневой папки.
+    :param index: Добавлять ли в путь к файлу корневую папку.
+    :param get_headers_from_subfolder: Брать ли заголовки из подпапок.
     :return: Строка путей, разделённая символом \f.
     """
     search_paths = []
