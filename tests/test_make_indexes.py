@@ -86,32 +86,19 @@ class TestMakeIndexes:
 
 class TestTrimLeadingNumbers:
 
-    def test_trim_with_normal_input(self):
-        assert trim_leading_numbers("1425. faire46") == "faire46"
+    strlist = [
+        ("1425. faire46", "faire46"),
+        ("No leading number", "No leading number"),
+        ("", ""),
+        ("   42. with spaces", "   42. with spaces"),
+        ("1234. !@#$%^&*()", "!@#$%^&*()"),
+        ("1234.", "1234."),
+        ("5678.foo", "5678.foo"),
+        ("1234. text with 5678 number", "text with 5678 number"),
+        ("1234. 5678. double number dot", "5678. double number dot"),
+        ("5678.\nnew line", "5678.\nnew line"),
+    ]
 
-    def test_trim_with_no_leading_number(self):
-        assert trim_leading_numbers("No leading number") == "No leading number"
-
-    def test_trim_with_empty_string(self):
-        assert trim_leading_numbers("") == ""
-
-    def test_trim_whitespace_before_number(self):
-        assert trim_leading_numbers("   42. with spaces") == "   42. with spaces"
-
-    def test_trim_with_special_characters(self):
-        assert trim_leading_numbers("1234. !@#$%^&*()") == "!@#$%^&*()"
-
-    def test_trim_with_only_number(self):
-        assert trim_leading_numbers("1234.") == "1234."
-
-    def test_trim_with_no_space_after_dot(self):
-        assert trim_leading_numbers("5678.foo") == "5678.foo"
-
-    def test_trim_with_number_in_text(self):
-        assert trim_leading_numbers("1234. text with 5678 number") == "text with 5678 number"
-
-    def test_trim_with_multiple_dots_and_numbers(self):
-        assert trim_leading_numbers("1234. 5678. double number dot") == "5678. double number dot"
-
-    def test_trim_with_newline_characters(self):
-        assert trim_leading_numbers("5678.\nnew line") == "5678.\nnew line"
+    @pytest.mark.parametrize("original,modified", strlist)
+    def test_trim_leading_numbers(self, original: str, modified: str) -> None:
+        assert trim_leading_numbers(original) == modified
