@@ -190,10 +190,10 @@ def _add_to_nav(path: Path, docs: list[Path], trim_folder_numbers: bool) -> None
 
 def trim_leading_numbers(path: str) -> str:
     """
-    Проверяет, является ли папка нумерованной.
-    :param path: Путь до папки.
-    :param trim_folder_numbers: Удалять ли номера папок.
-    :return: Имя папки.
+    Убирает из начала строки номер
+    1. Текст -> Текст
+    :param path: Строка с номером
+    :return: Строка без номера, если номер совпадает с шаблоном (1. )
     """
     try:
         number, name = path.split(".", maxsplit=1)
