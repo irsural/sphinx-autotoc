@@ -195,12 +195,16 @@ def trim_leading_numbers(path: str) -> str:
     :param trim_folder_numbers: Удалять ли номера папок.
     :return: Имя папки.
     """
-    path_name = path.name
-    if trim_folder_numbers:
-        number, name = path_name.split(".", maxsplit=1)
-        if number.isdigit() and name[0] == " " and len(name) > 1:
-            return name.lstrip()
-    return path_name
+    try:
+        number, name = path.split(".", maxsplit=1)
+        if len(name) > 1:
+            if number.isdigit() and name[0] == " ":
+                name = name.lstrip()
+                if name:
+                    return name
+    except ValueError:
+        pass
+    return path
 
 
 def _get_dir_index(path: Path) -> Path:
