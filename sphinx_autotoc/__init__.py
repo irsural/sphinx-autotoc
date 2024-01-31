@@ -151,7 +151,7 @@ def _add_to_main_page(
     :return main_page: Изменённое содержимое индексной страницы.
     """
     search_paths = _make_search_paths(dir_path, dirs, True, True)
-    dirname = _check_leading_numbers(dir_path, trim_folder_numbers)
+    dirname = trim_leading_numbers(dir_path.name) if trim_folder_numbers else dir_path.name
     main_page += TOCTREE.format(
         group_name=dirname, group_dirs=search_paths
     ).replace("\f", "\n   ")
@@ -176,7 +176,7 @@ def _add_to_nav(path: Path, docs: list[Path], trim_folder_numbers: bool) -> None
             content = f.read()
 
     index_path = _get_dir_index(path)
-    dirname = _check_leading_numbers(path, trim_folder_numbers)
+    dirname = trim_leading_numbers(path.name) if trim_folder_numbers else path.name
     search_paths = _make_search_paths(path, docs, False, True)
     with open(index_path.as_posix(), "w", encoding="utf-8") as f:
         f.write(
@@ -188,7 +188,7 @@ def _add_to_nav(path: Path, docs: list[Path], trim_folder_numbers: bool) -> None
         )
 
 
-def _check_leading_numbers(path: Path, trim_folder_numbers: bool) -> str:
+def trim_leading_numbers(path: str) -> str:
     """
     Проверяет, является ли папка нумерованной.
     :param path: Путь до папки.
