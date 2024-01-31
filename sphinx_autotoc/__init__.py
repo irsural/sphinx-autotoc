@@ -1,5 +1,4 @@
 import os
-import re
 from pathlib import Path
 from collections import defaultdict
 from typing import Iterator
@@ -185,10 +184,9 @@ def _add_to_nav(path: Path, docs: list[Path], trim_folder_numbers: bool) -> None
 def _check_leading_numbers(path: Path, trim_folder_numbers: bool) -> str:
     path_name = path.name
     if trim_folder_numbers:
-        split_path = path_name.split(".")
-        if split_path[0].isdigit() and len(split_path) > 1:
-            split_path[1] = split_path[1].lstrip()
-            return ".".join(split_path[1:])
+        number, name = path_name.split(".", maxsplit=1)
+        if number.isdigit() and name[0] == " " and len(name) > 1:
+            return name.lstrip()
     return path_name
 
 
