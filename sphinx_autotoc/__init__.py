@@ -200,7 +200,7 @@ def _get_dir_index(path: Path) -> Path:
     return path / f"{SPHINX_SERVICE_FILE_PREFIX}.{path.name}.rst"
 
 
-def _make_search_paths(root: Path, f: list[Path], index: bool, irs_docs_style:bool) -> str:
+def _make_search_paths(root: Path, f: list[Path], index: bool, get_headers_from_subfolder: bool) -> str:
     """
     Создает пути к содержимому в папке.
 
@@ -214,7 +214,7 @@ def _make_search_paths(root: Path, f: list[Path], index: bool, irs_docs_style:bo
     search_paths = []
     for file in f:
         p = Path(root.name)
-        tmp = "src" if irs_docs_style else ""
+        tmp = "src" if get_headers_from_subfolder else ""
         if file.is_dir() and file.parent == root:
             p = tmp / p / file.name / _get_dir_index(file).name if index else Path(file.name) / _get_dir_index(file).name
         elif not file.is_dir():
