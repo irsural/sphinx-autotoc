@@ -188,23 +188,22 @@ def _add_to_nav(path: Path, docs: list[Path], trim_folder_numbers: bool) -> None
         )
 
 
-def trim_leading_numbers(path: str) -> str:
+def trim_leading_numbers(input: str) -> str:
     """
     Убирает из начала строки номер
     1. Текст -> Текст
-    :param path: Строка с номером
-    :return: Строка без номера, если номер совпадает с шаблоном (1. )
+    :param input: Строка с номером
+    :return: Строка без номера, если совпадает с шаблоном "123. строка"
     """
-    try:
-        number, name = path.split(".", maxsplit=1)
+    split_path = input.split(".", maxsplit=1)
+    if len(split_path) == 2:
+        number, name = split_path
         if len(name) > 1:
             if number.isdigit() and name[0] == " ":
                 name = name.lstrip()
                 if name:
                     return name
-    except ValueError:
-        pass
-    return path
+    return input
 
 
 def _get_dir_index(path: Path) -> Path:
