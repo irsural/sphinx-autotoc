@@ -201,11 +201,9 @@ def trim_leading_numbers(input: str) -> str:
     split_path = input.split(".", maxsplit=1)
     if len(split_path) == 2:
         number, name = split_path
-        if len(name) > 1:
-            if number.isdigit() and name[0] == " ":
-                name = name.lstrip()
-                if name:
-                    return name
+        name = name.lstrip()
+        if number.isdigit() and name:
+            return name
     return input
 
 

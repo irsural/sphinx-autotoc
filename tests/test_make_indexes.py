@@ -93,10 +93,10 @@ class TestTrimLeadingNumbers:
         ("   42. with spaces", "   42. with spaces"),
         ("1234. !@#$%^&*()", "!@#$%^&*()"),
         ("1234.", "1234."),
-        ("5678.foo", "5678.foo"),
+        ("5678.foo", "foo"),
         ("1234. text with 5678 number", "text with 5678 number"),
         ("1234. 5678. double number dot", "5678. double number dot"),
-        ("5678.\nnew line", "5678.\nnew line"),
+        ("5678.\nnew line", "new line"),
     ])
     def test_trim_leading_numbers(self, original: str, modified: str) -> None:
         assert trim_leading_numbers(original) == modified
