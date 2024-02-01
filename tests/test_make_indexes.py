@@ -86,7 +86,7 @@ class TestMakeIndexes:
 
 class TestTrimLeadingNumbers:
 
-    strlist = [
+    @pytest.mark.parametrize("original,modified", [
         ("1425. faire46", "faire46"),
         ("No leading number", "No leading number"),
         ("", ""),
@@ -97,8 +97,6 @@ class TestTrimLeadingNumbers:
         ("1234. text with 5678 number", "text with 5678 number"),
         ("1234. 5678. double number dot", "5678. double number dot"),
         ("5678.\nnew line", "5678.\nnew line"),
-    ]
-
-    @pytest.mark.parametrize("original,modified", strlist)
+    ])
     def test_trim_leading_numbers(self, original: str, modified: str) -> None:
         assert trim_leading_numbers(original) == modified
