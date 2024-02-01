@@ -1,5 +1,4 @@
 import os
-import re
 from pathlib import Path
 from collections import defaultdict
 from typing import Iterator
@@ -45,6 +44,7 @@ def run_make_indexes(app: Sphinx) -> None:
 
 
 def setup(app: Sphinx) -> None:
+    app.add_config_value("sphinx_autotoc_trim_folder_numbers", False, "html", bool)
     app.add_config_value("sphinx_autotoc_get_headers_from_subfolder", False, "html", bool)
     app.add_config_value("sphinx_autotoc_header", "Содержание", "html", str)
     app.connect('builder-inited', run_make_indexes, 250)
@@ -63,8 +63,9 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
     main_page = MAIN_PAGE
     index = docs_directory / SPHINX_INDEX_FILE_NAME
     index_md = (docs_directory / SPHINX_INDEX_FILE_NAME).with_suffix(".md")
-    irs_docs_style_header = cfg["sphinx_autotoc_get_headers_from_subfolder"]
+    get_headers_from_subfolder = cfg["sphinx_autotoc_get_headers_from_subfolder"]
     header_text = cfg["sphinx_autotoc_header"]
+    trim_folder_numbers = cfg["sphinx_autotoc_trim_folder_numbers"]
 
     if index_md.exists():
         os.remove(index_md)
@@ -78,15 +79,15 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
                 # Если sub == root то, директория не содержит вложенных директорий
                 # В содержании данная директория показа как группа, но не
                 # является таковой.
-                _add_to_nav(sub, docs)
+                _add_to_nav(sub, docs, trim_folder_numbers)
                 main_page_dirs.append(sub)
             else:
                 main_page_dirs.extend(docs)
-        if irs_docs_style_header:
-            main_page = _add_to_main_page(root, main_page_dirs, main_page)
+        if get_headers_from_subfolder:
+            main_page = _add_to_main_page(root, main_page_dirs, main_page, trim_folder_numbers)
         else:
             all_main_page_dirs.update({root: main_page_dirs})
-    if not irs_docs_style_header:
+    if not get_headers_from_subfolder:
         paths = ""
         for dir_path, dirs in all_main_page_dirs.items():
             paths += _make_search_paths(dir_path, dirs, True, False)
@@ -113,6 +114,12 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
 
 
 def parse_autosummary(root: Path) -> tuple[str, Path] | tuple[None, None]:
+    """
+    Парсит файлы .rst в поисках автосаммари.
+
+    :param root: Путь к папке с сайтом.
+    :return: Имя модуля и путь к файлу с автосаммари.
+    """
     files = [Path(file) for file in glob.glob(f"{root}/**/*.rst", recursive=True)]
     for file in files:
         with open(file, 'r') as f:
@@ -133,6 +140,7 @@ def _add_to_main_page(
     dir_path: Path,
     dirs: list[Path],
     main_page: str,
+    trim_folder_numbers: bool
 ) -> str:
     """
     Добавляет дерево содержания папки в индексную страницу проекта.
@@ -140,16 +148,18 @@ def _add_to_main_page(
     :param dir_path: Путь к папке.
     :param dirs: Список вложенных папок.
     :param main_page: Содержимое индексной страницы.
+    :param trim_folder_numbers: Удалять ли номера папок.
     :return main_page: Изменённое содержимое индексной страницы.
     """
     search_paths = _make_search_paths(dir_path, dirs, True, True)
+    dirname = trim_leading_numbers(dir_path.name) if trim_folder_numbers else dir_path.name
     main_page += TOCTREE.format(
-        group_name=dir_path.stem, group_dirs=search_paths
+        group_name=dirname, group_dirs=search_paths
     ).replace("\f", "\n   ")
     return main_page
 
 
-def _add_to_nav(path: Path, docs: list[Path]) -> None:
+def _add_to_nav(path: Path, docs: list[Path], trim_folder_numbers: bool) -> None:
     """
     Добавляет рядом с папкой её сервисный файл.
 
@@ -158,6 +168,7 @@ def _add_to_nav(path: Path, docs: list[Path]) -> None:
 
     :param path: Путь до папки.
     :param docs: Список файлов в папке.
+    :param trim_folder_numbers: Удалять ли номера папок.
     """
     content = ""
     include_file = path / "README.md"
@@ -166,21 +177,35 @@ def _add_to_nav(path: Path, docs: list[Path]) -> None:
             content = f.read()
 
     index_path = _get_dir_index(path)
-
-    pat = re.search(r"(\d\.\s)?(.*)", path.stem)  # 1. Text
-    if pat:
-        dirname_with_no_heading_nums = pat.group(2)
-    else:
-        return
+    dirname = trim_leading_numbers(path.name) if trim_folder_numbers else path.name
     search_paths = _make_search_paths(path, docs, False, True)
     with open(index_path.as_posix(), "w", encoding="utf-8") as f:
         f.write(
             NAV_PATTERN.format(
-                dirname=dirname_with_no_heading_nums,
+                dirname=dirname,
                 search_paths=search_paths,
                 includes=content,
             ).replace("\f", "\n   ")
         )
+
+
+def trim_leading_numbers(input: str) -> str:
+    """
+    Убирает из начала строки номер
+
+    >>> trim_leading_numbers("1. Текст")
+    'Текст'
+
+    :param input: Строка с номером
+    :return: Строка без номера, если совпадает с шаблоном "123. строка"
+    """
+    split_path = input.split(".", maxsplit=1)
+    if len(split_path) == 2:
+        number, name = split_path
+        name = name.lstrip()
+        if number.isdigit() and name:
+            return name
+    return input
 
 
 def _get_dir_index(path: Path) -> Path:
@@ -193,7 +218,7 @@ def _get_dir_index(path: Path) -> Path:
     return path / f"{SPHINX_SERVICE_FILE_PREFIX}.{path.name}.rst"
 
 
-def _make_search_paths(root: Path, f: list[Path], index: bool, irs_docs_style:bool) -> str:
+def _make_search_paths(root: Path, f: list[Path], index: bool, get_headers_from_subfolder: bool) -> str:
     """
     Создает пути к содержимому в папке.
 
@@ -202,12 +227,14 @@ def _make_search_paths(root: Path, f: list[Path], index: bool, irs_docs_style:bo
 
     :param root: Корневая папка.
     :param f: Список содержимого корневой папки.
+    :param index: Добавлять ли в путь к файлу корневую папку.
+    :param get_headers_from_subfolder: Брать ли заголовки из подпапок.
     :return: Строка путей, разделённая символом \f.
     """
     search_paths = []
     for file in f:
         p = Path(root.name)
-        tmp = "src" if irs_docs_style else ""
+        tmp = "src" if get_headers_from_subfolder else ""
         if file.is_dir() and file.parent == root:
             p = tmp / p / file.name / _get_dir_index(file).name if index else Path(file.name) / _get_dir_index(file).name
         elif not file.is_dir():

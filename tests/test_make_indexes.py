@@ -1,7 +1,7 @@
 import os
 import pytest
 from pathlib import Path
-from sphinx_autotoc import make_indexes
+from sphinx_autotoc import make_indexes, trim_leading_numbers
 from sphinx.config import Config
 from sphinx.errors import ConfigError
 
@@ -82,3 +82,21 @@ class TestMakeIndexes:
         with pytest.raises(ConfigError):
             cfg = Config.read(path)
             make_indexes(path, cfg)
+
+
+class TestTrimLeadingNumbers:
+
+    @pytest.mark.parametrize("original,modified", [
+        ("1425. faire46", "faire46"),
+        ("No leading number", "No leading number"),
+        ("", ""),
+        ("   42. with spaces", "   42. with spaces"),
+        ("1234. !@#$%^&*()", "!@#$%^&*()"),
+        ("1234.", "1234."),
+        ("5678.foo", "foo"),
+        ("1234. text with 5678 number", "text with 5678 number"),
+        ("1234. 5678. double number dot", "5678. double number dot"),
+        ("5678.\nnew line", "new line"),
+    ])
+    def test_trim_leading_numbers(self, original: str, modified: str) -> None:
+        assert trim_leading_numbers(original) == modified
