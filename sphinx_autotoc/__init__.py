@@ -116,6 +116,7 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
 def parse_autosummary(root: Path) -> tuple[str, Path] | tuple[None, None]:
     """
     Парсит файлы .rst в поисках автосаммари.
+
     :param root: Путь к папке с сайтом.
     :return: Имя модуля и путь к файлу с автосаммари.
     """
@@ -191,7 +192,9 @@ def _add_to_nav(path: Path, docs: list[Path], trim_folder_numbers: bool) -> None
 def trim_leading_numbers(input: str) -> str:
     """
     Убирает из начала строки номер
+
     1. Текст -> Текст
+
     :param input: Строка с номером
     :return: Строка без номера, если совпадает с шаблоном "123. строка"
     """
