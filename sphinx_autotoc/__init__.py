@@ -55,11 +55,6 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
     :param docs_directory: Путь к папке с документацией.
     :param cfg: Конфигурация Sphinx.
     """
-    module_name = file_path = None
-    if "sphinx.ext.autosummary" in cfg.extensions:
-        logger.info("autosummary found!")
-        module_name, file_path = parse_autosummary(docs_directory)
-        logger.info(f"module_name: {module_name}, file_path: {file_path}")
     main_page = MAIN_PAGE
     index = docs_directory / SPHINX_INDEX_FILE_NAME
     index_md = (docs_directory / SPHINX_INDEX_FILE_NAME).with_suffix(".md")
@@ -97,21 +92,37 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
     with open(index, "w", encoding="utf8") as f:
         f.write(main_page.format(project=cfg.project, dop="=" * len(cfg.project)))
 
-    if module_name and file_path:
-        logger.info("Working on autosummary reference...")
-        autosummary_index = _get_dir_index(file_path.parent)
-        if autosummary_index.parent == docs_directory:
-            autosummary_index = index
-        with open(autosummary_index, 'r+', encoding="utf8") as f:
-            f.seek(0)
-            lines = f.readlines()
-            for i, line in enumerate(lines):
-                if file_path.name in line:
-                    lines[i] = f"   API reference <_autosummary/{module_name}>\n"
-            f.seek(0)
-            f.writelines(lines)
-            f.truncate()
-        sleep(2)
+    _check_autosummary(cfg, docs_directory, index)
+
+
+def _check_autosummary(cfg: Config, docs_directory: Path, index:Path):
+    if "sphinx.ext.autosummary" in cfg.extensions and cfg.autosummary_generate:
+        logger.info("autosummary found!")
+        module_name, file_path = parse_autosummary(docs_directory)
+        if module_name is None or file_path is None:
+            logger.info("No .rst file with recursive autosummary directive found, skipping...")
+        else:
+            logger.info(f"module_name: {module_name}, file_path: {file_path}")
+            logger.info("Working on autosummary reference...")
+            autosummary_index = _get_dir_index(file_path.parent)
+            if autosummary_index.parent == docs_directory:
+                autosummary_index = index
+            elif autosummary_index.parent.parent == docs_directory / "src":
+                _replace_autosummary_with_api_reference(index, file_path, module_name)
+            _replace_autosummary_with_api_reference(autosummary_index, file_path, module_name)
+
+
+def _replace_autosummary_with_api_reference(index: Path, file_path: Path, module_name: str) -> None:
+    with open(index, 'r+', encoding="utf8") as f:
+        f.seek(0)
+        lines = f.readlines()
+        for i, line in enumerate(lines):
+            if file_path.name in line:
+                lines[i] = ("   API reference <"
+                            f"{Path(line.strip()).parent / '_autosummary' / module_name}>\n")
+        f.seek(0)
+        f.writelines(lines)
+        f.truncate()
 
 
 def parse_autosummary(root: Path) -> tuple[str, Path] | tuple[None, None]:
