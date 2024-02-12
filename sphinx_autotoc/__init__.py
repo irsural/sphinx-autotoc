@@ -66,32 +66,33 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
     get_headers_from_subfolder = cfg["sphinx_autotoc_get_headers_from_subfolder"]
     header_text = cfg["sphinx_autotoc_header"]
     trim_folder_numbers = cfg["sphinx_autotoc_trim_folder_numbers"]
-
+    src = docs_directory / "src"
     if index_md.exists():
         os.remove(index_md)
-    all_main_page_dirs = {}
-    for root, sub_dict in _iter_dirs(docs_directory, cfg):
-        main_page_dirs = []
-        for sub, docs in sub_dict.items():
-            if sub.name == "_autosummary":
-                continue
-            if sub != root:
-                # Если sub == root то, директория не содержит вложенных директорий
-                # В содержании данная директория показа как группа, но не
-                # является таковой.
-                _add_to_nav(sub, docs, trim_folder_numbers)
-                main_page_dirs.append(sub)
-            else:
-                main_page_dirs.extend(docs)
-        if get_headers_from_subfolder:
-            main_page = _add_to_main_page(root, main_page_dirs, main_page, trim_folder_numbers)
-        else:
-            all_main_page_dirs.update({root: main_page_dirs})
+    main_page_dirs: dict[Path, list[Path]] = {}  # toctree header: toctree links
     if not get_headers_from_subfolder:
-        paths = ""
-        for dir_path, dirs in all_main_page_dirs.items():
-            paths += _make_search_paths(dir_path, dirs, True, False)
-        main_page += TOCTREE.format(group_name=header_text, group_dirs=paths).replace("\f", "\n   ")
+        main_page_dirs = {src: []}
+    for root, docs in _iter_dirs(docs_directory, cfg):
+
+        if root.name == "_autosummary":
+            continue
+
+        _add_to_nav(root, docs, trim_folder_numbers)
+
+        if get_headers_from_subfolder:
+            if root.parent == src:
+                main_page_dirs.update({root: docs})
+        else:
+            if root == src:
+                main_page_dirs[src].extend(docs)
+            elif root.parent == src:
+                main_page_dirs[src].append(Path(root.name))
+
+    main_page = _add_to_main_page(main_page_dirs,
+                                  main_page,
+                                  trim_folder_numbers,
+                                  get_headers_from_subfolder,
+                                  header_text)
 
     with open(index, "w", encoding="utf8") as f:
         f.write(main_page.format(project=cfg.project, dop="=" * len(cfg.project)))
@@ -120,7 +121,7 @@ def parse_autosummary(root: Path) -> tuple[str, Path] | tuple[None, None]:
     :param root: Путь к папке с сайтом.
     :return: Имя модуля и путь к файлу с автосаммари.
     """
-    files = [Path(file) for file in glob.glob(f"{root}/**/*.rst", recursive=True)]
+    files = [Path(file) for file in glob.glob(f"{root}/**/[!_]*/*.rst", recursive=True)]
     for file in files:
         with open(file, 'r') as f:
             lines = f.readlines()
@@ -137,10 +138,11 @@ def parse_autosummary(root: Path) -> tuple[str, Path] | tuple[None, None]:
 
 
 def _add_to_main_page(
-    dir_path: Path,
-    dirs: list[Path],
+    dirs: dict[Path, list[Path]],
     main_page: str,
-    trim_folder_numbers: bool
+    trim_folder_numbers: bool,
+    get_headers_from_subfolder: bool,
+    header_text: str,
 ) -> str:
     """
     Добавляет дерево содержания папки в индексную страницу проекта.
@@ -151,11 +153,13 @@ def _add_to_main_page(
     :param trim_folder_numbers: Удалять ли номера папок.
     :return main_page: Изменённое содержимое индексной страницы.
     """
-    search_paths = _make_search_paths(dir_path, dirs, True, True)
-    dirname = trim_leading_numbers(dir_path.name) if trim_folder_numbers else dir_path.name
-    main_page += TOCTREE.format(
-        group_name=dirname, group_dirs=search_paths
-    ).replace("\f", "\n   ")
+    for path, docs in dirs.items():
+        search_paths = _make_search_paths(path, docs, True)
+        dirname = trim_leading_numbers(path.name) if trim_folder_numbers else path.name
+        main_page += TOCTREE.format(
+            group_name=dirname if get_headers_from_subfolder else header_text,
+            group_dirs=search_paths
+        ).replace("\f", "\n   ")
     return main_page
 
 
@@ -178,7 +182,7 @@ def _add_to_nav(path: Path, docs: list[Path], trim_folder_numbers: bool) -> None
 
     index_path = _get_dir_index(path)
     dirname = trim_leading_numbers(path.name) if trim_folder_numbers else path.name
-    search_paths = _make_search_paths(path, docs, False, True)
+    search_paths = _make_search_paths(path, docs, False)
     with open(index_path.as_posix(), "w", encoding="utf-8") as f:
         f.write(
             NAV_PATTERN.format(
@@ -218,7 +222,7 @@ def _get_dir_index(path: Path) -> Path:
     return path / f"{SPHINX_SERVICE_FILE_PREFIX}.{path.name}.rst"
 
 
-def _make_search_paths(root: Path, f: list[Path], index: bool, get_headers_from_subfolder: bool) -> str:
+def _make_search_paths(root: Path, f: list[Path], index: bool) -> str:
     """
     Создает пути к содержимому в папке.
 
@@ -228,7 +232,6 @@ def _make_search_paths(root: Path, f: list[Path], index: bool, get_headers_from_
     :param root: Корневая папка.
     :param f: Список содержимого корневой папки.
     :param index: Добавлять ли в путь к файлу корневую папку.
-    :param get_headers_from_subfolder: Брать ли заголовки из подпапок.
     :return: Строка путей, разделённая символом \f.
     """
     search_paths = []
@@ -250,7 +253,7 @@ def _make_search_paths(root: Path, f: list[Path], index: bool, get_headers_from_
     return "\f".join(search_paths) + "\f"
 
 
-def _iter_dirs(docs_directory: Path, cfg: Config) -> Iterator[tuple[Path, dict[Path, list[Path]]]]:
+def _iter_dirs(docs_directory: Path, cfg: Config) -> Iterator[tuple[Path, list[Path]]]:
     """
     Итерируется по папке.
     Содержимое папки маршрутизируется и сортируется.
@@ -266,14 +269,11 @@ def _iter_dirs(docs_directory: Path, cfg: Config) -> Iterator[tuple[Path, dict[P
     mp = _flatmap(docs_directory, cfg)
     skeys = sorted(mp.keys())
     for root in skeys:
-        sub = mp[root]
-        docs = {}
-        for k, v in sub.items():
-            docs[k] = sorted(v)
-        yield root, docs
+        sub = sorted(mp[root])
+        yield root, sub
 
 
-def _flatmap(docs_directory: Path, cfg: Config) -> dict[Path, dict[Path, set[Path]]]:
+def _flatmap(docs_directory: Path, cfg: Config) -> dict[Path, set[Path]]:
     """
         Составляет маршруты файлов с искомыми суффиксами.
     Суффиксы файлов берутся из конфигурационного файла изначальной папки.
@@ -292,37 +292,25 @@ def _flatmap(docs_directory: Path, cfg: Config) -> dict[Path, dict[Path, set[Pat
     маршруты будут:
     ::
         {project/main:
-            {project/main:
-                (project/main/index.rst, project/main/second.rst)
-                },
+            (project/main/index.rst, project/main/second.rst)
+        },
         {project/data:
-            {project/data:
-                (project/data/table.rst)
-            },
-            {project/data/inner_dir:
-                (project/data/inner_dir/data.rst)
-            }
+            (project/data/table.rst)
+        },
+        {project/data/inner_dir:
+            (project/data/inner_dir/data.rst)
         }
 
     :param docs_directory: Папка с документацией.
     :return: Маршруты файлов в папке
     """
-    roots: dict[Path, dict[Path, set[Path]]] = {}
+    roots: dict[Path, set[Path]] = defaultdict(set)
     for file in _list_files(docs_directory):
-        if file.parent.name and file.suffix in cfg.source_suffix.keys():
-            parents = list(reversed(file.parents))
-            relative_group = parents[1]
-            abs_group = docs_directory / relative_group
-            if roots.get(abs_group) is None:
-                roots[abs_group] = defaultdict(set)
-            parts = [file, *file.parents]
-            # Если i - путь до директории, то i-1, его файл или каталог
-            # -2, так как "." и group не нужны
-            if len(parts) == 3:
-                roots[abs_group][abs_group].add(docs_directory / file)
-            else:
-                for i, p in enumerate(parts[1:-2]):
-                    roots[abs_group][docs_directory / p].add(docs_directory / parts[i])
+        if file.parent.name:
+            if file.suffix in cfg.source_suffix.keys():
+                roots[docs_directory / file.parent].add(Path(file.name))
+            elif (docs_directory / file).is_dir():
+                roots[docs_directory / file.parent].add(Path(file.name))
     return roots
 
 
@@ -336,7 +324,7 @@ def _list_files(docs_directory: Path) -> set[Path]:
     result = set()
 
     def _should_ignore(p: Path) -> bool:
-        return any(part in IGNORE_LIST for part in p.parts)
+        return any(part in IGNORE_LIST for part in p.parts) or any(part.startswith("_") for part in p.parts)
 
     for root, dirs, files in os.walk(docs_directory):
         if _should_ignore(Path(root)):
