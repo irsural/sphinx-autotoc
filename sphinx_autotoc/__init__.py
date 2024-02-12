@@ -10,9 +10,9 @@ from sphinx.application import Sphinx
 from time import sleep
 
 logger = logging.getLogger(__name__)
-SPHINX_SERVICE_FILE_PREFIX = "service"
-SPHINX_INDEX_FILE_NAME = f"{SPHINX_SERVICE_FILE_PREFIX}.index.rst"
-IGNORE_LIST = {".git", ".idea", "logs", ".venv", ".vscode"}
+SPHINX_SERVICE_FILE_PREFIX = "autotoc"
+SPHINX_INDEX_FILE_NAME = "autotoc.rst"
+IGNORE_LIST = {".git", ".idea", "logs", ".venv", ".vscode", "venv"}
 NAV_PATTERN = """
 {dirname}
 ==========
@@ -39,7 +39,7 @@ TOCTREE = """
 
 def run_make_indexes(app: Sphinx) -> None:
     logger.info('Running make_indexes...')
-    app.config["root_doc"] = "service.index"
+    app.config["root_doc"] = "autotoc"
     make_indexes(Path(app.srcdir), app.config)
 
 
@@ -236,17 +236,16 @@ def _make_search_paths(root: Path, f: list[Path], index: bool) -> str:
     """
     search_paths = []
     for file in f:
-        p = Path(root.name)
-        tmp = "src" if get_headers_from_subfolder else ""
-        if file.is_dir() and file.parent == root:
-            p = tmp / p / file.name / _get_dir_index(file).name if index else Path(file.name) / _get_dir_index(file).name
-        elif not file.is_dir():
-            p = tmp / p / file.name if index else Path(file.name)
+        p: Path = ("src" if root.parent.name == "src" else "") / Path(root.name) if index else Path("")
+        if (root / file).is_dir():
+            p /= file / _get_dir_index(file).name
         else:
+            p /= file
+
+        # Если смотрим файл содержания текущей папки
+        if p.stem.split(".", maxsplit=1) == (SPHINX_SERVICE_FILE_PREFIX, root.name):
             continue
 
-        if p.name.startswith("service.") and p.name.split(".")[1] == root.name:
-            continue
         if p.as_posix() not in search_paths:
             search_paths.append(p.as_posix())
     search_paths.sort(key=lambda x: Path(x).stem.replace("service.", ""))
@@ -261,11 +260,6 @@ def _iter_dirs(docs_directory: Path, cfg: Config) -> Iterator[tuple[Path, list[P
     :param docs_directory: Папка с документацией.
     :return: Кортеж из пути до папки и отсортированного содержимого этой папки.
     """
-    if cfg["sphinx_autotoc_get_headers_from_subfolder"]:
-        src_directory = docs_directory / 'src'
-        if src_directory.exists() and src_directory.is_dir():
-            docs_directory = src_directory
-
     mp = _flatmap(docs_directory, cfg)
     skeys = sorted(mp.keys())
     for root in skeys:
