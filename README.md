@@ -166,3 +166,44 @@ sphinx_autotoc_get_headers_from_subfolder = True
 Вид сгенерированного содержания:
 
 ![subfolders, trim numbers](docs/images/sf_trim.png)
+
+## Совместимость с другими расширениями
+
+sphinx-autotoc взаимодействует с содержанием сайта, поэтому возможны конфликты с другими расширениями.
+
+Особые инструкции для избежания ошибок и информация об их исправлении 
+будут появляться в этом разделе по мере появления.
+
+### sphinx.ext.autosummary
+
+При использовании расширения 
+[sphinx.ext.autosummary](https://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html)
+необходимо использовать рекурсивную директиву **autosummary**.
+
+Пример **conf.py**, при котором будет запущена особая обработка **autosummary**:
+
+```python
+extensions = [
+    ...,
+    'sphinx.ext.autosummary',
+    ...
+]
+autosummary_generate = True
+```
+
+Пример rst-документа, при котором будет запущена особая обработка **autosummary**:
+
+`docs/src/folder/publicapi.rst`
+
+```rst
+
+.. autosummary::
+   :recursive:
+   
+   module
+```
+
+При этих условиях ссылка на publicapi.rst будет отображаться в содержании папки `folder`
+как "API reference".
+
+В противном случае, ссылка будет отображаться как "publicapi" и вести себя неправильно.
