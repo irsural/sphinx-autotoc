@@ -7,7 +7,6 @@ import glob
 from sphinx.util import logging
 from sphinx.config import Config
 from sphinx.application import Sphinx
-from time import sleep
 
 logger = logging.getLogger(__name__)
 SPHINX_SERVICE_FILE_PREFIX = "autotoc"
@@ -71,8 +70,8 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
 
         if root.name == "_autosummary":
             continue
-
-        _add_to_nav(root, docs, trim_folder_numbers)
+        if root != src:
+            _add_to_nav(root, docs, trim_folder_numbers)
 
         if get_headers_from_subfolder:
             if root.parent == src:
