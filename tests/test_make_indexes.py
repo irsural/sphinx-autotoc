@@ -10,17 +10,23 @@ MAKE_INDEXES_TEST_PROJECTS_DIR = os.path.join(
 )
 
 
+def activate_cfg(path: Path):
+    cfg = Config.read(path)
+    cfg.pre_init_values()
+    cfg.init_values()
+    cfg.add("sphinx_autotoc_trim_folder_numbers", False, "html", bool)
+    cfg.add("sphinx_autotoc_get_headers_from_subfolder", False, "html", bool)
+    cfg.add("sphinx_autotoc_header", "Содержание", "html", str)
+    return cfg
+
 class TestMakeIndexes:
     def test_make_indexes_ok(self) -> None:
         path = Path(MAKE_INDEXES_TEST_PROJECTS_DIR) / "no_errors"
-
-        cfg = Config.read(path)
-        cfg.pre_init_values()
-        cfg.init_values()
-
+        cfg = activate_cfg(path)
+        cfg.sphinx_autotoc_get_headers_from_subfolder = True
         make_indexes(path, cfg)
-        assert os.path.isfile(path / "service.index.rst")
-        with open(path / "service.index.rst", "r", encoding="utf8") as f:
+        assert os.path.isfile(path / "autotoc.rst")
+        with open(path / "autotoc.rst", "r", encoding="utf8") as f:
             assert (
                     f.read()
                     == """No Errors Test Project
@@ -42,8 +48,8 @@ class TestMakeIndexes:
         cfg.init_values()
 
         make_indexes(path, cfg)
-        assert os.path.isfile(path / "service.index.rst")
-        with open(path / "service.index.rst", "r", encoding="utf8") as f:
+        assert os.path.isfile(path / "autotoc.rst")
+        with open(path / "autotoc.rst", "r", encoding="utf8") as f:
             assert f.read() == """No Errors Test Project\n=========================================="""
 
     def test_make_indexes_show_hidden(self) -> None:
@@ -54,8 +60,8 @@ class TestMakeIndexes:
         cfg.init_values()
 
         make_indexes(path, cfg)
-        assert os.path.isfile(path / "service.index.rst")
-        with open(path / "service.index.rst", "r", encoding="utf8") as f:
+        assert os.path.isfile(path / "autotoc.rst")
+        with open(path / "autotoc.rst", "r", encoding="utf8") as f:
             assert (
                     f.read()
                     == """No Errors Test Project
