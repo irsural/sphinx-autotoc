@@ -210,6 +210,6 @@ autosummary_generate = True
 ```
 
 При этих условиях ссылка на autosummary.rst в содержании будет отображаться в содержании папки `folder`
-как "API reference".
+как значение ``sphinx_autotoc_autosummary_header``.
 
 В противном случае, ссылка будет отображаться как "autosummary" и вести себя неправильно.
