@@ -199,7 +199,7 @@ autosummary_generate = True
 
 Пример rst-документа, при котором будет запущена особая обработка **autosummary**:
 
-`docs/src/folder/publicapi.rst`
+`docs/src/folder/autosummary.rst`
 
 ```rst
 
@@ -209,7 +209,7 @@ autosummary_generate = True
    module
 ```
 
-При этих условиях ссылка на publicapi.rst будет отображаться в содержании папки `folder`
+При этих условиях ссылка на autosummary.rst в содержании будет отображаться в содержании папки `folder`
 как "API reference".
 
-В противном случае, ссылка будет отображаться как "publicapi" и вести себя неправильно.
+В противном случае, ссылка будет отображаться как "autosummary" и вести себя неправильно.
