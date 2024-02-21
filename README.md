@@ -176,12 +176,9 @@ sphinx_autotoc_get_headers_from_subfolder = True
 
 ![subfolders, trim numbers](docs/images/sf_trim.png)
 
-## Совместимость с другими расширениями
 
 sphinx-autotoc взаимодействует с содержанием сайта, поэтому возможны конфликты с другими расширениями.
 
-Особые инструкции для избежания ошибок и информация об их исправлении 
-будут появляться в этом разделе по мере появления.
 
 ### sphinx.ext.autosummary
 
