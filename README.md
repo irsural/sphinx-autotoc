@@ -180,7 +180,7 @@ sphinx_autotoc_get_headers_from_subfolder = True
 sphinx-autotoc взаимодействует с содержанием сайта, поэтому возможны конфликты с другими расширениями.
 
 
-### sphinx.ext.autosummary
+### Автоматическая генерация документации по коду
 
 При использовании расширения 
 [sphinx.ext.autosummary](https://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html)
