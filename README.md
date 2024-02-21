@@ -63,6 +63,12 @@ extensions = [
 
 Задает текст заголовка. Значение по умолчанию - **Содержание**.
 
+#### ``sphinx_autotoc_autosummary_header``
+
+Используется только при включенном  ``sphinx.ext.autosummary``
+
+Задаёт текст ссылки на autosummary. По умолчанию - **API reference**.
+
 #### ``sphinx_autotoc_trim_folder_numbers``
 
 По умолчанию сортировка папок в содержании происходит по алфавиту.
