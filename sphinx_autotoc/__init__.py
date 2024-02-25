@@ -58,27 +58,30 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
     get_headers_from_subfolder = cfg["sphinx_autotoc_get_headers_from_subfolder"]
     header_text = cfg["sphinx_autotoc_header"]
     trim_folder_numbers = cfg["sphinx_autotoc_trim_folder_numbers"]
-    src = docs_directory / "src"
+    src_path = docs_directory / "src"
+
     if index_md.exists():
         os.remove(index_md)
+        
     main_page_dirs: dict[Path, list[Path]] = {}  # toctree header: toctree links
-    if not get_headers_from_subfolder:
-        main_page_dirs = {src: []}
-    for root, docs in _iter_dirs(docs_directory, cfg):
 
-        if root.name == "_autosummary":
+    if not get_headers_from_subfolder:
+        main_page_dirs = {src_path: []}
+
+    for current_dir, current_dir_files in _iter_dirs(docs_directory, cfg):
+        if current_dir.name == "_autosummary":
             continue
-        if root != src:
-            _add_to_nav(root, docs, trim_folder_numbers)
+        if current_dir != src_path:
+            _add_to_nav(current_dir, current_dir_files, trim_folder_numbers)
 
         if get_headers_from_subfolder:
-            if root.parent == src:
-                main_page_dirs.update({root: docs})
+            if current_dir.parent == src_path:
+                main_page_dirs.update({current_dir: current_dir_files})
         else:
-            if root == src:
-                main_page_dirs[src].extend(docs)
-            elif root.parent == src:
-                main_page_dirs[src].append(Path(root.name))
+            if current_dir == src_path:
+                main_page_dirs[src_path].extend(current_dir_files)
+            elif current_dir.parent == src_path:
+                main_page_dirs[src_path].append(Path(current_dir.name))
 
     main_page = _add_to_main_page(main_page_dirs,
                                   main_page,
