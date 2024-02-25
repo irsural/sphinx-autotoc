@@ -8,7 +8,7 @@ from sphinx.errors import ConfigError
 MAKE_INDEXES_TEST_PROJECTS_DIR = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "make_indexes_test_projects"
 )
-
+NESTING_PROJECT_PATH = Path(MAKE_INDEXES_TEST_PROJECTS_DIR) / "3_levels_of_nesting"
 
 def activate_cfg(path: Path):
     cfg = Config.read(path)
@@ -111,13 +111,11 @@ class TestTrimLeadingNumbers:
 class TestMakeIndexesFlags:
 
     def test_make_indexes_default_flags(self):
-        path = Path(MAKE_INDEXES_TEST_PROJECTS_DIR) / "3_levels_of_nesting"
+        cfg = activate_cfg(NESTING_PROJECT_PATH)
 
-        cfg = activate_cfg(path)
-
-        make_indexes(path, cfg)
-        assert os.path.isfile(path / "autotoc.rst")
-        with open(path / "autotoc.rst", "r", encoding="utf8") as f:
+        make_indexes(NESTING_PROJECT_PATH, cfg)
+        assert os.path.isfile(NESTING_PROJECT_PATH / "autotoc.rst")
+        with open(NESTING_PROJECT_PATH / "autotoc.rst", "r", encoding="utf8") as f:
             assert f.read() == """3 levels of nesting Test Project
 ====================================================
 .. toctree::
@@ -129,14 +127,13 @@ class TestMakeIndexesFlags:
 """
 
     def test_make_indexes_sf(self) -> None:
-        path = Path(MAKE_INDEXES_TEST_PROJECTS_DIR) / "3_levels_of_nesting"
+        cfg = activate_cfg(NESTING_PROJECT_PATH)
 
-        cfg = activate_cfg(path)
         cfg.sphinx_autotoc_get_headers_from_subfolder = True
 
-        make_indexes(path, cfg)
-        assert os.path.isfile(path / "autotoc.rst")
-        with open(path / "autotoc.rst", "r", encoding="utf8") as f:
+        make_indexes(NESTING_PROJECT_PATH, cfg)
+        assert os.path.isfile(NESTING_PROJECT_PATH / "autotoc.rst")
+        with open(NESTING_PROJECT_PATH / "autotoc.rst", "r", encoding="utf8") as f:
             assert f.read() == """3 levels of nesting Test Project
 ====================================================
 .. toctree::
@@ -150,13 +147,12 @@ class TestMakeIndexesFlags:
 """
 
     def test_make_indexes_trim(self):
-        path = Path(MAKE_INDEXES_TEST_PROJECTS_DIR) / "3_levels_of_nesting"
+        cfg = activate_cfg(NESTING_PROJECT_PATH)
 
-        cfg = activate_cfg(path)
         cfg.sphinx_autotoc_trim_folder_numbers = True
-        make_indexes(path, cfg)
-        rst = path / "src" / "1. level1" / "autotoc.1. level1.rst"
 
+        make_indexes(NESTING_PROJECT_PATH, cfg)
+        rst = NESTING_PROJECT_PATH / "src" / "1. level1" / "autotoc.1. level1.rst"
         assert rst.is_file()
         with open(rst, "r", encoding="utf8") as f:
             assert f.read() == """
@@ -175,16 +171,14 @@ level1
     """
 
     def test_make_indexes_sf_trim(self) -> None:
-        path = Path(MAKE_INDEXES_TEST_PROJECTS_DIR) / "3_levels_of_nesting"
-
-        cfg = activate_cfg(path)
+        cfg = activate_cfg(NESTING_PROJECT_PATH)
 
         cfg.sphinx_autotoc_get_headers_from_subfolder = True
         cfg.sphinx_autotoc_trim_folder_numbers = True
 
-        make_indexes(path, cfg)
-        assert os.path.isfile(path / "autotoc.rst")
-        with open(path / "autotoc.rst", "r", encoding="utf8") as f:
+        make_indexes(NESTING_PROJECT_PATH, cfg)
+        assert os.path.isfile(NESTING_PROJECT_PATH / "autotoc.rst")
+        with open(NESTING_PROJECT_PATH / "autotoc.rst", "r", encoding="utf8") as f:
             assert f.read() == """3 levels of nesting Test Project
 ====================================================
 .. toctree::
@@ -198,14 +192,12 @@ level1
 """
 
     def test_make_indexes_custom_header(self) -> None:
-        path = Path(MAKE_INDEXES_TEST_PROJECTS_DIR) / "3_levels_of_nesting"
-
-        cfg = activate_cfg(path)
+        cfg = activate_cfg(NESTING_PROJECT_PATH)
 
         cfg.sphinx_autotoc_header = "custom header"
-        make_indexes(path, cfg)
-        assert os.path.isfile(path / "autotoc.rst")
-        with open(path / "autotoc.rst", "r", encoding="utf8") as f:
+        make_indexes(NESTING_PROJECT_PATH, cfg)
+        assert os.path.isfile(NESTING_PROJECT_PATH / "autotoc.rst")
+        with open(NESTING_PROJECT_PATH / "autotoc.rst", "r", encoding="utf8") as f:
             assert f.read() == """3 levels of nesting Test Project
 ====================================================
 .. toctree::
