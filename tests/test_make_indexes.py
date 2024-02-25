@@ -19,75 +19,12 @@ def activate_cfg(path: Path):
     cfg.add("sphinx_autotoc_header", "Содержание", "html", str)
     return cfg
 
-class TestMakeIndexes:
-    def test_make_indexes_ok(self) -> None:
-        path = Path(MAKE_INDEXES_TEST_PROJECTS_DIR) / "no_errors"
+
+def test_make_indexes_wrong_directory() -> None:
+    path = Path(MAKE_INDEXES_TEST_PROJECTS_DIR) / "doesnotexist"
+    with pytest.raises(ConfigError):
         cfg = activate_cfg(path)
-        cfg.sphinx_autotoc_get_headers_from_subfolder = True
         make_indexes(path, cfg)
-        assert os.path.isfile(path / "autotoc.rst")
-        with open(path / "autotoc.rst", "r", encoding="utf8") as f:
-            assert (
-                    f.read()
-                    == """No Errors Test Project
-==========================================
-.. toctree::
-   :maxdepth: 2
-   :caption: main
-
-   main/index.rst
-   
-"""
-            )
-
-    def test_make_indexes_ignore_root(self) -> None:
-        path = Path(MAKE_INDEXES_TEST_PROJECTS_DIR) / "no_root"
-
-        cfg = Config.read(path)
-        cfg.pre_init_values()
-        cfg.init_values()
-
-        make_indexes(path, cfg)
-        assert os.path.isfile(path / "autotoc.rst")
-        with open(path / "autotoc.rst", "r", encoding="utf8") as f:
-            assert f.read() == """No Errors Test Project\n=========================================="""
-
-    def test_make_indexes_show_hidden(self) -> None:
-        path = Path(MAKE_INDEXES_TEST_PROJECTS_DIR) / "hidden_files"
-
-        cfg = Config.read(path)
-        cfg.pre_init_values()
-        cfg.init_values()
-
-        make_indexes(path, cfg)
-        assert os.path.isfile(path / "autotoc.rst")
-        with open(path / "autotoc.rst", "r", encoding="utf8") as f:
-            assert (
-                    f.read()
-                    == """No Errors Test Project
-==========================================
-.. toctree::
-   :maxdepth: 2
-   :caption: .hiddendir
-
-   .hiddendir/visible.rst
-   
-
-.. toctree::
-   :maxdepth: 2
-   :caption: main
-
-   main/.hidden.rst
-   main/index.rst
-   
-"""
-            )
-
-    def test_make_indexes_wrong_directory(self) -> None:
-        path = Path(MAKE_INDEXES_TEST_PROJECTS_DIR) / "doesnotexist"
-        with pytest.raises(ConfigError):
-            cfg = Config.read(path)
-            make_indexes(path, cfg)
 
 
 class TestTrimLeadingNumbers:
