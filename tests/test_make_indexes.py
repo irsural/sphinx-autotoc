@@ -59,9 +59,7 @@ class TestMakeIndexesFlags:
    :maxdepth: 2
    :caption: Содержание
 
-   src/1. level1/autotoc.1. level1.rst
-   
-"""
+   src/1. level1/autotoc.1. level1.rst"""
 
     def test_make_indexes_sf(self) -> None:
         cfg = activate_cfg(NESTING_PROJECT_PATH)
@@ -79,9 +77,7 @@ class TestMakeIndexesFlags:
 
    src/1. level1/2. level2/autotoc.2. level2.rst
    src/1. level1/l1.rst
-   src/1. level1/l1.1.rst
-   
-"""
+   src/1. level1/l1.1.rst"""
 
     def test_make_indexes_trim(self):
         cfg = activate_cfg(NESTING_PROJECT_PATH)
@@ -97,15 +93,13 @@ level1
 ==========
 
 
-
 .. toctree::
    :maxdepth: 2
 
    2. level2/autotoc.2. level2.rst
    l1.rst
    l1.1.rst
-   
-    """
+"""
 
     def test_make_indexes_sf_trim(self) -> None:
         cfg = activate_cfg(NESTING_PROJECT_PATH)
@@ -124,9 +118,7 @@ level1
 
    src/1. level1/2. level2/autotoc.2. level2.rst
    src/1. level1/l1.rst
-   src/1. level1/l1.1.rst
-   
-"""
+   src/1. level1/l1.1.rst"""
 
     def test_make_indexes_custom_header(self) -> None:
         cfg = activate_cfg(NESTING_PROJECT_PATH)
@@ -141,6 +133,4 @@ level1
    :maxdepth: 2
    :caption: custom header
 
-   src/1. level1/autotoc.1. level1.rst
-   
-"""
+   src/1. level1/autotoc.1. level1.rst                     """

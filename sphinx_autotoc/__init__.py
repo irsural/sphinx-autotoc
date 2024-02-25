@@ -15,14 +15,13 @@ IGNORE_LIST = {".git", ".idea", "logs", ".venv", ".vscode", "venv"}
 NAV_PATTERN = """
 {dirname}
 ==========
-
 {includes}
 
 .. toctree::
    :maxdepth: 2
 
    {search_paths}
-    """
+"""
 
 MAIN_PAGE = """{project}
 ==================={dop}="""
@@ -32,8 +31,7 @@ TOCTREE = """
    :maxdepth: 2
    :caption: {group_name}
 
-   {group_dirs}
-"""
+   {group_dirs}"""
 
 
 def run_make_indexes(app: Sphinx) -> None:
@@ -258,7 +256,7 @@ def _make_search_paths(root: Path, f: list[Path], index: bool) -> str:
         if p.as_posix() not in search_paths:
             search_paths.append(p.as_posix())
     search_paths.sort(key=lambda x: Path(x).stem.replace("service.", ""))
-    return "\f".join(search_paths) + "\f"
+    return "\f".join(search_paths)
 
 
 def _iter_dirs(docs_directory: Path, cfg: Config) -> Iterator[tuple[Path, list[Path]]]:
