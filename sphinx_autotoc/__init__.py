@@ -54,15 +54,11 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
     """
     main_page = MAIN_PAGE
     index = docs_directory / SPHINX_INDEX_FILE_NAME
-    index_md = (docs_directory / SPHINX_INDEX_FILE_NAME).with_suffix(".md")
     get_headers_from_subfolder = cfg["sphinx_autotoc_get_headers_from_subfolder"]
     header_text = cfg["sphinx_autotoc_header"]
     trim_folder_numbers = cfg["sphinx_autotoc_trim_folder_numbers"]
     src_path = docs_directory / "src"
 
-    if index_md.exists():
-        os.remove(index_md)
-        
     main_page_dirs: dict[Path, list[Path]] = {}  # toctree header: toctree links
 
     if not get_headers_from_subfolder:
