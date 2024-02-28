@@ -135,3 +135,27 @@ level1
    :caption: custom header
 
    src/1. level1/autotoc.1. level1.rst"""
+
+
+class TestAutosummaryCompatibility:
+    project_path = Path(MAKE_INDEXES_TEST_PROJECTS_DIR, "autosummary_test")
+
+    @pytest.mark.parametrize("test_file_path, test_file_line", [  # type: ignore[misc]
+        (project_path / "autotoc.rst",
+         "   Autosummary <src/1. level1/_autosummary/Level1>\n"),
+        (project_path / "src/1. level1/autotoc.1. level1.rst",
+         "   Autosummary <_autosummary/Level1>\n"),
+        (project_path / "src/1. level1/2. level2/autotoc.2. level2.rst",
+         "   Autosummary <_autosummary/Level2>\n"),
+        (project_path / "src/1. level1/2. level2/3. level3/autotoc.3. level3.rst",
+         "   Autosummary <_autosummary/Level3>\n"),
+    ])
+    def test_autosummary_in_several_levels(self, test_file_path: Path, test_file_line: str) -> None:
+        cfg = activate_cfg(self.project_path)
+        cfg.add('autosummary_generate', True, 'html', bool)
+        cfg.post_init_values()
+        make_indexes(self.project_path, cfg)
+        assert os.path.isfile(test_file_path)
+        with open(test_file_path) as f:
+            lines = f.readlines()
+            assert test_file_line in lines
