@@ -1,12 +1,12 @@
-import os
-from pathlib import Path
-from collections import defaultdict
-from typing import Iterator
 import glob
+import os
+from collections import defaultdict
+from pathlib import Path
+from typing import Iterator
 
-from sphinx.util import logging
-from sphinx.config import Config
 from sphinx.application import Sphinx
+from sphinx.config import Config
+from sphinx.util import logging
 
 logger = logging.getLogger(__name__)
 SPHINX_SERVICE_FILE_PREFIX = "autotoc"
@@ -91,57 +91,77 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
     _check_autosummary(cfg, docs_directory, index)
 
 
-def _check_autosummary(cfg: Config, docs_directory: Path, index:Path):
+def _check_autosummary(cfg: Config, docs_directory: Path, index: Path) -> None:
+    """
+    Проверяет наличие autosummary в проекте.
+
+    Если autosummary найдено, заменяет ссылку на него в индексной странице на ссылку c
+    cfg.sphinx_autotoc_autosummary_header.
+
+    :param cfg: Конфигурация Sphinx.
+    :param docs_directory: Путь к папке с документацией.
+    :param index: Путь к индексной странице.
+    """
     if "sphinx.ext.autosummary" in cfg.extensions and cfg.autosummary_generate:
         logger.info("autosummary found!")
-        module_name, file_path = parse_autosummary(docs_directory)
-        if module_name is None or file_path is None:
-            logger.info("No .rst file with recursive autosummary directive found, skipping...")
-        else:
+        for (file_header, module_name, file_path) in _parse_autosummary(docs_directory):
+            if any((file_header, module_name, file_path)) is None:
+                continue
             logger.info(f"module_name: {module_name}, file_path: {file_path}")
             logger.info("Working on autosummary reference...")
             autosummary_index = _get_dir_index(file_path.parent)
             if autosummary_index.parent == docs_directory:
                 autosummary_index = index
             elif autosummary_index.parent.parent == docs_directory / "src":
-                _replace_autosummary_with_api_reference(index, file_path, module_name)
-            _replace_autosummary_with_api_reference(autosummary_index, file_path, module_name)
+                _replace_autosummary_with_api_reference(index, file_path,
+                                                        module_name, file_header)
+            _replace_autosummary_with_api_reference(autosummary_index, file_path,
+                                                    module_name, file_header)
 
 
-def _replace_autosummary_with_api_reference(index: Path, file_path: Path, module_name: str) -> None:
+def _replace_autosummary_with_api_reference(index: Path, file_path: Path,
+                                            module_name: str, autosummary_header: str) -> None:
+    """
+    Заменяет ссылку на autosummary в индексной странице на ссылку на API reference.
+
+    :param index: Путь к индексной странице.
+    :param file_path: Путь к файлу с autosummary.
+    :param module_name: Имя модуля autosummary.
+    :param autosummary_header: Заголовок для autosummary.
+    """
     with open(index, 'r+', encoding="utf8") as f:
         f.seek(0)
         lines = f.readlines()
         for i, line in enumerate(lines):
             if file_path.name in line:
-                lines[i] = ("   API reference <"
+                lines[i] = (f"   {autosummary_header} <"
                             f"{Path(line.strip()).parent / '_autosummary' / module_name}>\n")
         f.seek(0)
         f.writelines(lines)
         f.truncate()
 
 
-def parse_autosummary(root: Path) -> tuple[str, Path] | tuple[None, None]:
+def _parse_autosummary(root: Path) -> Iterator[tuple[str, str, Path] | tuple[None, None, None]]:
     """
-    Парсит файлы .rst в поисках автосаммари.
+    Ищет и парсит файлы с директивой autosummary.
 
     :param root: Путь к папке с сайтом.
-    :return: Имя модуля и путь к файлу с автосаммари.
+    :return: Заголовок файла, имя модуля и путь к файлу с autosummary.
     """
     files = [Path(file) for file in glob.glob(f"{root}/**/[!_]*/*.rst", recursive=True)]
     for file in files:
-        with open(file, 'r') as f:
-            lines = f.readlines()
-            found_autosummary = False
-            for i in range(len(lines)):
-                if '.. autosummary::' in lines[i]:
-                    found_autosummary = True
-                elif found_autosummary and ':recursive:' in lines[i]:
-                    for j in range(i + 1, len(lines)):
-                        next_line = lines[j].strip()
-                        if len(next_line) > 1 and not next_line.startswith(':'):
-                            return next_line, file
-    return None, None
+        if file.name == "autotoc.autosummary.rst":
+            with open(file) as f:
+                lines = f.readlines()
+                for i in range(len(lines)):
+                    if '.. autosummary::' in lines[i]:
+                        break
+                for j in range(i + 1, len(lines)):
+                    next_line = lines[j].strip()
+                    if len(next_line) > 1 and not next_line.startswith(':'):
+                        yield lines[0].strip(), next_line, file
+                        break
+    return None, None, None
 
 
 def _add_to_main_page(
@@ -242,7 +262,7 @@ def _make_search_paths(root: Path, f: list[Path], index: bool) -> str:
     """
     search_paths = []
     for file in f:
-        p: Path = ("src" if root.parent.name == "src" else "") / Path(root.name) if index else Path("")
+        p = ("src" if root.parent.name == "src" else "") / Path(root.name) if index else Path("")
         if (root / file).is_dir():
             p /= file / _get_dir_index(file).name
         else:
@@ -254,7 +274,7 @@ def _make_search_paths(root: Path, f: list[Path], index: bool) -> str:
 
         if p.as_posix() not in search_paths:
             search_paths.append(p.as_posix())
-    search_paths.sort(key=lambda x: Path(x).stem.replace("service.", ""))
+    search_paths.sort(key=lambda x: Path(x).stem.replace(f"{SPHINX_SERVICE_FILE_PREFIX}.", ""))
     return "\f".join(search_paths)
 
 

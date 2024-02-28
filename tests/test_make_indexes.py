@@ -16,7 +16,6 @@ def activate_cfg(path: Path):
     cfg.add("sphinx_autotoc_trim_folder_numbers", False, "html", bool)
     cfg.add("sphinx_autotoc_get_headers_from_subfolder", False, "html", bool)
     cfg.add("sphinx_autotoc_header", "Содержание", "html", str)
-    cfg.add("sphinx_autotoc_autosummary_header", "Autosummary", "html", str)
     return cfg
 
 
@@ -142,17 +141,18 @@ class TestAutosummaryCompatibility:
 
     @pytest.mark.parametrize("test_file_path, test_file_line", [  # type: ignore[misc]
         (project_path / "autotoc.rst",
-         "   Autosummary <src/1. level1/_autosummary/Level1>\n"),
+         "   L1header <src/1. level1/_autosummary/Level1>\n"),
         (project_path / "src/1. level1/autotoc.1. level1.rst",
-         "   Autosummary <_autosummary/Level1>\n"),
+         "   L1header <_autosummary/Level1>\n"),
         (project_path / "src/1. level1/2. level2/autotoc.2. level2.rst",
-         "   Autosummary <_autosummary/Level2>\n"),
+         "   l2header <_autosummary/Level2>\n"),
         (project_path / "src/1. level1/2. level2/3. level3/autotoc.3. level3.rst",
-         "   Autosummary <_autosummary/Level3>\n"),
+         "   l3 <_autosummary/Level3>\n"),
     ])
     def test_autosummary_in_several_levels(self, test_file_path: Path, test_file_line: str) -> None:
         cfg = activate_cfg(self.project_path)
         cfg.add('autosummary_generate', True, 'html', bool)
+        cfg.sphinx_autotoc_get_headers_from_subfolder = True
         cfg.post_init_values()
         make_indexes(self.project_path, cfg)
         assert os.path.isfile(test_file_path)
