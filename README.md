@@ -184,9 +184,10 @@ sphinx-autotoc взаимодействует с содержанием сайт
 
 При использовании расширения 
 [sphinx.ext.autosummary](https://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html)
-необходимо использовать рекурсивную директиву **autosummary**.
+необходимо назвать файл, в котором указываются директивы autosummary
+**autotoc.autosummary.rst**.
 
-Пример **conf.py**, при котором будет запущена особая обработка **autosummary**:
+Пример **conf.py**:
 
 ```python
 extensions = [
@@ -197,19 +198,16 @@ extensions = [
 autosummary_generate = True
 ```
 
-Пример rst-документа, при котором будет запущена особая обработка **autosummary**:
+Особая обработка autosummary будет запущена только если выполняются **все** 
+нижеперечисленные условия:
 
-`docs/src/folder/autosummary.rst`
+1. Включено расширение **sphinx.ext.autosummary**
+2. Включено расширение **sphinx_autotoc**
+3. Включен флаг **autosummary_generate** в **conf.py** (включен по умолчанию)
+4. Файл с директивами autosummary назван **autotoc.autosummary.rst**
+5. В файле с директивами указан документируемый модуль, класс или функция.
 
-```rst
+В этом случае ссылка на autosummary будет отображаться как значение `sphinx_autotoc_autosummary_header`
+(по умолчанию - API reference).
 
-.. autosummary::
-   :recursive:
-   
-   module
-```
-
-При этих условиях ссылка на autosummary.rst в содержании будет отображаться в содержании папки `folder`
-как значение ``sphinx_autotoc_autosummary_header``.
-
-В противном случае, ссылка будет отображаться как "autosummary" и вести себя неправильно.
+В противном случае, ссылка будет отображаться и вести себя неправильно.
