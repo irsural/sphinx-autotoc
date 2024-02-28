@@ -187,17 +187,6 @@ sphinx-autotoc взаимодействует с содержанием сайт
 необходимо назвать файл, в котором указываются директивы autosummary
 **autotoc.autosummary.rst**.
 
-Пример **conf.py**:
-
-```python
-extensions = [
-    ...,
-    'sphinx.ext.autosummary',
-    ...
-]
-autosummary_generate = True
-```
-
 Особая обработка autosummary будет запущена только если выполняются **все** 
 нижеперечисленные условия:
 
@@ -211,3 +200,25 @@ autosummary_generate = True
 (по умолчанию - API reference).
 
 В противном случае, ссылка будет отображаться и вести себя неправильно.
+
+Пример **conf.py**:
+
+```python
+extensions = [
+    ...,
+    'sphinx.ext.autosummary',
+    ...
+]
+autosummary_generate = True
+```
+
+Пример файла **autotoc.autosummary.rst**:
+
+```rst
+.. autosummary::
+   :toctree: _autosummary
+   :recursive:
+   
+   module
+```
+`module` - название документируемого модуля.
