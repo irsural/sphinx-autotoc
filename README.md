@@ -210,10 +210,12 @@ autosummary_generate = True
 Пример файла **autotoc.autosummary.rst**:
 
 ```rst
+API reference 
+==============
 .. autosummary::
    :toctree: _autosummary
    :recursive:
    
    module
 ```
-`module` - название документируемого модуля.
+`module` - название документируемого модуля Python.
