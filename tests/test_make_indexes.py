@@ -1,5 +1,6 @@
 import os
 import pytest
+from textwrap import dedent
 from pathlib import Path
 from sphinx_autotoc import make_indexes, trim_leading_numbers
 from sphinx.config import Config
@@ -53,13 +54,15 @@ class TestMakeIndexesFlags:
         make_indexes(self.project_path, cfg)
         assert os.path.isfile(self.project_path / "autotoc.rst")
         with open(self.project_path / "autotoc.rst", encoding="utf8") as f:
-            assert f.read() == """3 levels of nesting Test Project
-====================================================
-.. toctree::
-   :maxdepth: 2
-   :caption: Содержание
-
-   src/1. level1/autotoc.1. level1.rst"""
+            assert f.read() == dedent("""
+            3 levels of nesting Test Project
+            ====================================================
+            .. toctree::
+               :maxdepth: 2
+               :caption: Содержание
+            
+               src/1. level1/autotoc.1. level1.rst
+            """)
 
     def test_make_indexes_sf(self) -> None:
         cfg = activate_cfg(self.project_path)
@@ -69,15 +72,17 @@ class TestMakeIndexesFlags:
         make_indexes(self.project_path, cfg)
         assert os.path.isfile(self.project_path / "autotoc.rst")
         with open(self.project_path / "autotoc.rst", encoding="utf8") as f:
-            assert f.read() == """3 levels of nesting Test Project
-====================================================
-.. toctree::
-   :maxdepth: 2
-   :caption: 1. level1
-
-   src/1. level1/2. level2/autotoc.2. level2.rst
-   src/1. level1/l1.rst
-   src/1. level1/l1.1.rst"""
+            assert f.read() == dedent("""
+            3 levels of nesting Test Project
+            ====================================================
+            .. toctree::
+               :maxdepth: 2
+               :caption: 1. level1
+            
+               src/1. level1/2. level2/autotoc.2. level2.rst
+               src/1. level1/l1.rst
+               src/1. level1/l1.1.rst
+            """)
 
     def test_make_indexes_trim(self) -> None:
         cfg = activate_cfg(self.project_path)
@@ -88,18 +93,18 @@ class TestMakeIndexesFlags:
         rst = self.project_path / "src" / "1. level1" / "autotoc.1. level1.rst"
         assert rst.is_file()
         with open(rst, encoding="utf8") as f:
-            assert f.read() == """
-level1
-==========
-
-
-.. toctree::
-   :maxdepth: 2
-
-   2. level2/autotoc.2. level2.rst
-   l1.rst
-   l1.1.rst
-"""
+            assert f.read() == dedent("""
+            level1
+            ==========
+            
+            
+            .. toctree::
+               :maxdepth: 2
+            
+               2. level2/autotoc.2. level2.rst
+               l1.rst
+               l1.1.rst
+            """)
 
     def test_make_indexes_sf_trim(self) -> None:
         cfg = activate_cfg(self.project_path)
@@ -110,15 +115,17 @@ level1
         make_indexes(self.project_path, cfg)
         assert os.path.isfile(self.project_path / "autotoc.rst")
         with open(self.project_path / "autotoc.rst", encoding="utf8") as f:
-            assert f.read() == """3 levels of nesting Test Project
-====================================================
-.. toctree::
-   :maxdepth: 2
-   :caption: level1
-
-   src/1. level1/2. level2/autotoc.2. level2.rst
-   src/1. level1/l1.rst
-   src/1. level1/l1.1.rst"""
+            assert f.read() == dedent("""
+            3 levels of nesting Test Project
+            ====================================================
+            .. toctree::
+               :maxdepth: 2
+               :caption: level1
+            
+               src/1. level1/2. level2/autotoc.2. level2.rst
+               src/1. level1/l1.rst
+               src/1. level1/l1.1.rst
+               """)
 
     def test_make_indexes_custom_header(self) -> None:
         cfg = activate_cfg(self.project_path)
@@ -127,13 +134,15 @@ level1
         make_indexes(self.project_path, cfg)
         assert os.path.isfile(self.project_path / "autotoc.rst")
         with open(self.project_path / "autotoc.rst", encoding="utf8") as f:
-            assert f.read() == """3 levels of nesting Test Project
-====================================================
-.. toctree::
-   :maxdepth: 2
-   :caption: custom header
-
-   src/1. level1/autotoc.1. level1.rst"""
+            assert f.read() == dedent("""
+            3 levels of nesting Test Project
+            ====================================================
+            .. toctree::
+               :maxdepth: 2
+               :caption: custom header
+            
+               src/1. level1/autotoc.1. level1.rst
+               """)
 
 
 class TestAutosummaryCompatibility:

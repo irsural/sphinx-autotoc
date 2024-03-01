@@ -23,7 +23,8 @@ NAV_PATTERN = """
    {search_paths}
 """
 
-MAIN_PAGE = """{project}
+MAIN_PAGE = """
+{project}
 ==================={dop}="""
 
 TOCTREE = """
@@ -31,7 +32,8 @@ TOCTREE = """
    :maxdepth: 2
    :caption: {group_name}
 
-   {group_dirs}"""
+   {group_dirs}
+"""
 
 
 def run_make_indexes(app: Sphinx) -> None:
