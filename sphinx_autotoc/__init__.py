@@ -156,7 +156,7 @@ def _parse_autosummary(root: Path) -> Iterator[tuple[str, str, Path] | tuple[Non
             with open(file) as f:
                 lines = f.readlines()
                 for i in range(len(lines)):
-                    if '.. autosummary::' in lines[i]:
+                    if lines[i].strip() == '.. autosummary::':
                         break
                 for j in range(i + 1, len(lines)):
                     next_line = lines[j].strip()
