@@ -1,4 +1,3 @@
-import glob
 import os
 from collections import defaultdict
 from pathlib import Path
@@ -60,6 +59,12 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
     header_text = cfg["sphinx_autotoc_header"]
     trim_folder_numbers = cfg["sphinx_autotoc_trim_folder_numbers"]
     src_path = docs_directory / "src"
+    autosummary_flag = False
+    autosummary_dict = defaultdict(tuple)
+
+    if "sphinx.ext.autosummary" in cfg.extensions and cfg.autosummary_generate:
+        logger.info("autosummary found!")
+        autosummary_flag = True
 
     main_page_dirs: dict[Path, list[Path]] = {}  # toctree header: toctree links
 
@@ -67,6 +72,10 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
         main_page_dirs = {src_path: []}
 
     for current_dir, current_dir_files in _iter_dirs(docs_directory, cfg):
+        if autosummary_flag:
+            for file in current_dir_files:
+                if file.name == "autotoc.autosummary.rst":
+                    autosummary_dict[current_dir / file] = _parse_autosummary(current_dir / file)
         if current_dir.name == "_autosummary":
             continue
         if current_dir != src_path:
@@ -90,35 +99,33 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
     with open(index, "w", encoding="utf8") as f:
         f.write(main_page.format(project=cfg.project, dop="=" * len(cfg.project)))
 
-    _check_autosummary(cfg, docs_directory, index)
+    if autosummary_flag:
+        _replace_autosummary(autosummary_dict, docs_directory, index)  # type: ignore[arg-type]
 
 
-def _check_autosummary(cfg: Config, docs_directory: Path, index: Path) -> None:
+def _replace_autosummary(autosummary_dict: dict[Path, tuple[str, str]],
+                         docs_directory: Path,
+                         index: Path) -> None:
     """
-    Проверяет наличие autosummary в проекте.
+    Меняет заголовок ссылки на autosummary на заголовок файла с директивой autosummary.
 
-    Если autosummary найдено, заменяет ссылку на него в индексной странице на ссылку c
-    cfg.sphinx_autotoc_autosummary_header.
-
-    :param cfg: Конфигурация Sphinx.
+    :param autosummary_dict: Словарь с путями к файлам с директивой autosummary.
     :param docs_directory: Путь к папке с документацией.
     :param index: Путь к индексной странице.
     """
-    if "sphinx.ext.autosummary" in cfg.extensions and cfg.autosummary_generate:
-        logger.info("autosummary found!")
-        for (file_header, module_name, file_path) in _parse_autosummary(docs_directory):
-            if any((file_header, module_name, file_path)) is None:
-                continue
-            logger.info(f"module_name: {module_name}, file_path: {file_path}")
-            logger.info("Working on autosummary reference...")
-            autosummary_index = _get_dir_index(file_path.parent)
-            if autosummary_index.parent == docs_directory:
-                autosummary_index = index
-            elif autosummary_index.parent.parent == docs_directory / "src":
-                _replace_autosummary_with_api_reference(index, file_path,
-                                                        module_name, file_header)
-            _replace_autosummary_with_api_reference(autosummary_index, file_path,
+    for file_path, (file_header, module_name) in autosummary_dict.items():
+        if any((file_header, module_name, file_path)) is None:
+            continue
+        logger.info(f"module_name: {module_name}, file_path: {file_path}")
+        logger.info("Working on autosummary reference...")
+        autosummary_index = _get_dir_index(file_path.parent)
+        if autosummary_index.parent == docs_directory:
+            autosummary_index = index
+        elif autosummary_index.parent.parent == docs_directory / "src":
+            _replace_autosummary_with_api_reference(index, file_path,
                                                     module_name, file_header)
+        _replace_autosummary_with_api_reference(autosummary_index, file_path,
+                                                module_name, file_header)
 
 
 def _replace_autosummary_with_api_reference(index: Path, file_path: Path,
@@ -143,27 +150,23 @@ def _replace_autosummary_with_api_reference(index: Path, file_path: Path,
         f.truncate()
 
 
-def _parse_autosummary(root: Path) -> Iterator[tuple[str, str, Path] | tuple[None, None, None]]:
+def _parse_autosummary(file: Path) -> tuple[str, str] | tuple[None, None]:
     """
-    Ищет и парсит файлы с директивой autosummary.
+    Парсит файл с директивой autosummary.
 
-    :param root: Путь к папке с сайтом.
-    :return: Заголовок файла, имя модуля и путь к файлу с autosummary.
+    :param file: Путь к файлу с директивой
+    :return: Заголовок файла и имя модуля.
     """
-    files = [Path(file) for file in glob.glob(f"{root}/**/[!_]*/*.rst", recursive=True)]
-    for file in files:
-        if file.name == "autotoc.autosummary.rst":
-            with open(file) as f:
-                lines = f.readlines()
-                for i in range(len(lines)):
-                    if lines[i].strip() == '.. autosummary::':
-                        break
-                for j in range(i + 1, len(lines)):
-                    next_line = lines[j].strip()
-                    if len(next_line) > 1 and not next_line.startswith(':'):
-                        yield lines[0].strip(), next_line, file
-                        break
-    return None, None, None
+    with open(file) as f:
+        lines = f.readlines()
+        for i in range(len(lines)):
+            if lines[i].strip() == '.. autosummary::':
+                break
+        for j in range(i + 1, len(lines)):
+            next_line = lines[j].strip()
+            if len(next_line) > 1 and not next_line.startswith(':'):
+                return lines[0].strip(), next_line
+    return None, None
 
 
 def _add_to_main_page(
