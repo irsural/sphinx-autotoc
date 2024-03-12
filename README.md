@@ -212,6 +212,7 @@ sphinx_autotoc_trim_folder_numbers = True
 1. Включено расширение **sphinx.ext.autosummary**
 1. Переменная ``autosummary_generate`` установлена в ``True`` в **conf.py**
 1. Файл с директивами ``autosummary`` назван **autotoc.autosummary.rst**
+1. Первая строка в файле **autotoc.autosummary.rst** - заголовок документации в содержании
 
 > [!NOTE]
 > Если документация по коду не добавляется в содержание, в первую очередь следует убедиться,
