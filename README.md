@@ -16,6 +16,12 @@
 > [!IMPORTANT]
 > Все папки, имена которых начинаются на символ ``_`` игнорируются и не добавляются в содержание в любом случае.
 
+Кроме того, **sphinx-autotoc** может добавлять в содержание документацию по коду, сгенерированную расширением 
+[sphinx.ext.autosummary](https://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html).
+
+> [!WARNING]
+> sphinx-autotoc взаимодействует с содержанием сайта, поэтому возможны конфликты с другими подобными расширениями.
+
 
 ## Использование
 
@@ -106,7 +112,7 @@ extensions = [
 Значение по умолчанию - ``False``
 
 
-## Пример
+## Примеры конфигурации
 
 Рассмотрим проект со следующей структурой:
 
@@ -134,8 +140,12 @@ project
 Содержимое **conf.py**:
 
 ```python
+# Папки в src станут ссылками, отдельные страницы в src отображаются
 sphinx_autotoc_get_headers_from_subfolder = False
+# Заголовок содержания - "Содержание"
 sphinx_autotoc_header = "Содержание"
+# Не удалять числа из имен папок
+sphinx_autotoc_trim_folder_numbers = False
 ```
 
 Вид сгенерированного содержания:
@@ -147,7 +157,10 @@ sphinx_autotoc_header = "Содержание"
 Содержимое **conf.py**:
 
 ```python
-sphinx_autotoc_get_headers_from_subfolder = False
+# Папки в src станут заголовками, отдельные страницы в src не отображаются
+sphinx_autotoc_get_headers_from_subfolder = True
+# Не удалять числа из имен папок
+sphinx_autotoc_trim_folder_numbers = False
 ```
 
 Вид сгенерированного содержания:
@@ -159,9 +172,12 @@ sphinx_autotoc_get_headers_from_subfolder = False
 Содержимое **conf.py**:
 
 ```python
-sphinx_autotoc_trim_folder_numbers = True
+# Папки в src станут ссылками, отдельные страницы в src отображаются
 sphinx_autotoc_get_headers_from_subfolder = False
+# Заголовок содержания - "Содержание"
 sphinx_autotoc_header = "Содержание"
+# Удалить числа из имен папок
+sphinx_autotoc_trim_folder_numbers = True
 ```
 
 Вид сгенерированного содержания:
@@ -173,8 +189,10 @@ sphinx_autotoc_header = "Содержание"
 Содержимое **conf.py**:
 
 ```python
-sphinx_autotoc_trim_folder_numbers = True
+# Папки в src станут заголовками, отдельные страницы в src не отображаются
 sphinx_autotoc_get_headers_from_subfolder = True
+# Удалить числа из имен папок
+sphinx_autotoc_trim_folder_numbers = True
 ```
 
 Вид сгенерированного содержания:
@@ -182,51 +200,58 @@ sphinx_autotoc_get_headers_from_subfolder = True
 ![subfolders, trim numbers](docs/images/sf_trim.png)
 
 
-sphinx-autotoc взаимодействует с содержанием сайта, поэтому возможны конфликты с другими расширениями.
+# Использование с sphinx.ext.autosummary
 
+Для добавления документации по коду в содержание, нужно добавить файл с именем **autotoc.autosummary.rst**
+в папку, в которой должна отобразиться документация.
 
-### Автоматическая генерация документации по коду
-
-При использовании расширения 
-[sphinx.ext.autosummary](https://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html)
-необходимо назвать файл, в котором указываются директивы autosummary
-**autotoc.autosummary.rst**.
-
-Особая обработка autosummary будет запущена только если выполняются **все** 
-нижеперечисленные условия:
+Документация будет добавлена в содержание если выполняются **все** нижеперечисленные условия:
 
 1. Включено расширение **sphinx.ext.autosummary**
-2. Включено расширение **sphinx_autotoc**
-3. Включен флаг **autosummary_generate** в **conf.py** (включен по умолчанию)
-4. Файл с директивами autosummary назван **autotoc.autosummary.rst**
-5. Первая строка файла с директивами - заголовок ссылки для этого файла
-6. В файле с директивами указан документируемый модуль, класс или функция.
-7. Документируемый модуль: 
-   * либо добавлен в **sys.path** в **conf.py** (`sys.path.insert(0, os.path('path_to_module'))`)
-   * либо установлен в том окружении, из которого запускается Sphinx
+1. Переменная ``autosummary_generate`` установлена в ``True`` в **conf.py**
+1. Файл с директивами ``autosummary`` назван **autotoc.autosummary.rst**
 
-В противном случае, ссылка будет отображаться и вести себя неправильно.
+> [!NOTE]
+> Если документация по коду не добавляется в содержание, в первую очередь следует убедиться,
+> что расширение **autosummary** отрабатывает корректно.
+>
+> Для проверки можно, например, отключив расширение **sphinx-autotoc** и добавив документацию по коду в содержание
+> вручную
+>
+> [Пример правильного добавления autosummary в содержание](https://github.com/JamesALeedham/Sphinx-Autosummary-Recursion)
 
-Пример **conf.py**:
 
-```python
-extensions = [
-    ...,
-    'sphinx.ext.autosummary',
-    ...
-]
-autosummary_generate = True
-```
+## Пример
 
-Пример файла **autotoc.autosummary.rst**:
+- **conf.py**:
 
-```rst
-API reference 
-==============
-.. autosummary::
-   :toctree: _autosummary
-   :recursive:
-   
-   module
-```
-`module` - название документируемого модуля Python.
+  ```python
+  extensions = [
+      ...,
+      'sphinx.ext.autosummary',
+      ...
+  ]
+  autosummary_generate = True
+  ```
+
+- **autotoc.autosummary.rst**:
+
+  ```rst
+  API reference 
+  
+  .. autosummary::
+     :toctree: _autosummary
+     :recursive:
+     
+     python_module_name
+  ```
+  
+  ``python_module_name`` - название документируемого python-модуля.
+
+> [!IMPORTANT]
+> ``python_module_name`` должен быть доступен для импорта во время работы sphinx.
+>
+> Некоторые из способов добиться этого:
+> 
+> - добавить путь к модулю в ``PYTHONPATH`` перед запуском сборки
+> - добавить путь к модулю в ``sys.path`` в **conf.py**
