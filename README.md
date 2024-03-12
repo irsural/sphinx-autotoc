@@ -200,7 +200,7 @@ sphinx_autotoc_trim_folder_numbers = True
 ![subfolders, trim numbers](docs/images/sf_trim.png)
 
 
-# Использование с sphinx.ext.autosummary
+## Использование с sphinx.ext.autosummary
 
 Для добавления документации по коду в содержание, нужно добавить файл с именем **autotoc.autosummary.rst**
 в папку, в которой должна отобразиться документация.
@@ -221,7 +221,7 @@ sphinx_autotoc_trim_folder_numbers = True
 > [Пример правильного добавления autosummary в содержание](https://github.com/JamesALeedham/Sphinx-Autosummary-Recursion)
 
 
-## Пример
+### Пример
 
 - **conf.py**:
 
