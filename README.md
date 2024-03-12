@@ -4,7 +4,24 @@
 для автоматической генерации содержания сайта 
 ([toctree](https://www.sphinx-doc.org/en/master/usage/restructuredtext/directives.html#table-of-contents)).
 
-Для корректной работы расширения, исходные файлы документации должны находиться в папке `src`, в корне документации.
+Расширение обходит содержимое папки **src** и автоматически создает toc-файлы. 
+В toc-файлах находится директива ``toctree``, в которую включены все файлы и папки, расположенные на одном уровне.
+
+Таким образом, **sphinx-autotoc** генерирует содержание, которое полностью повторяет структуру файлов и папок в папке **src**.
+Это избавляет от необходимости обновлять директивы ``toctree`` вручную при каждом добавлении нового файла в документацию.
+
+> [!IMPORTANT]
+> Для корректной работы расширения, исходные файлы документации должны находиться в папке `src`, в корне документации.
+
+> [!IMPORTANT]
+> Все папки, имена которых начинаются на символ ``_`` игнорируются и не добавляются в содержание в любом случае.
+
+Кроме того, **sphinx-autotoc** может добавлять в содержание документацию по коду, сгенерированную расширением 
+[sphinx.ext.autosummary](https://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html).
+
+> [!WARNING]
+> sphinx-autotoc взаимодействует с содержанием сайта, поэтому возможны конфликты с другими подобными расширениями.
+
 
 ## Использование
 
@@ -68,8 +85,9 @@ extensions = [
 По умолчанию сортировка папок в содержании происходит по алфавиту.
 
 Для того чтобы папки в содержании располагались в нужном порядке, можно добавить числа в начало названий папок.
+Однако, в этом случае в содержании все папки будут отображаться с числами, что некрасиво.
 
-Данный флаг определяет, нужно ли удалять числа из названий папок в содержании.
+С помощью данного флага можно убрать числа перед названиями папок в содержании, сохранив сортировку.
 
 Возможные значения: 
 
@@ -93,7 +111,8 @@ extensions = [
 
 Значение по умолчанию - ``False``
 
-## Пример
+
+## Примеры конфигурации
 
 Рассмотрим проект со следующей структурой:
 
@@ -102,6 +121,7 @@ project
 ├── conf.py
 ├── ...
 └── src
+    ├── _hidden_folder
     ├── root.md
     ├── 1. data
     │   ├── data1.rst
@@ -120,8 +140,12 @@ project
 Содержимое **conf.py**:
 
 ```python
+# Папки в src станут ссылками, отдельные страницы в src отображаются
 sphinx_autotoc_get_headers_from_subfolder = False
+# Заголовок содержания - "Содержание"
 sphinx_autotoc_header = "Содержание"
+# Не удалять числа из имен папок
+sphinx_autotoc_trim_folder_numbers = False
 ```
 
 Вид сгенерированного содержания:
@@ -133,7 +157,10 @@ sphinx_autotoc_header = "Содержание"
 Содержимое **conf.py**:
 
 ```python
-sphinx_autotoc_get_headers_from_subfolder = False
+# Папки в src станут заголовками, отдельные страницы в src не отображаются
+sphinx_autotoc_get_headers_from_subfolder = True
+# Не удалять числа из имен папок
+sphinx_autotoc_trim_folder_numbers = False
 ```
 
 Вид сгенерированного содержания:
@@ -145,9 +172,12 @@ sphinx_autotoc_get_headers_from_subfolder = False
 Содержимое **conf.py**:
 
 ```python
-sphinx_autotoc_trim_folder_numbers = True
+# Папки в src станут ссылками, отдельные страницы в src отображаются
 sphinx_autotoc_get_headers_from_subfolder = False
+# Заголовок содержания - "Содержание"
 sphinx_autotoc_header = "Содержание"
+# Удалить числа из имен папок
+sphinx_autotoc_trim_folder_numbers = True
 ```
 
 Вид сгенерированного содержания:
@@ -159,10 +189,69 @@ sphinx_autotoc_header = "Содержание"
 Содержимое **conf.py**:
 
 ```python
-sphinx_autotoc_trim_folder_numbers = True
+# Папки в src станут заголовками, отдельные страницы в src не отображаются
 sphinx_autotoc_get_headers_from_subfolder = True
+# Удалить числа из имен папок
+sphinx_autotoc_trim_folder_numbers = True
 ```
 
 Вид сгенерированного содержания:
 
 ![subfolders, trim numbers](docs/images/sf_trim.png)
+
+
+# Использование с sphinx.ext.autosummary
+
+Для добавления документации по коду в содержание, нужно добавить файл с именем **autotoc.autosummary.rst**
+в папку, в которой должна отобразиться документация.
+
+Документация будет добавлена в содержание если выполняются **все** нижеперечисленные условия:
+
+1. Включено расширение **sphinx.ext.autosummary**
+1. Переменная ``autosummary_generate`` установлена в ``True`` в **conf.py**
+1. Файл с директивами ``autosummary`` назван **autotoc.autosummary.rst**
+
+> [!NOTE]
+> Если документация по коду не добавляется в содержание, в первую очередь следует убедиться,
+> что расширение **autosummary** отрабатывает корректно.
+>
+> Для проверки можно, например, отключив расширение **sphinx-autotoc** и добавив документацию по коду в содержание
+> вручную
+>
+> [Пример правильного добавления autosummary в содержание](https://github.com/JamesALeedham/Sphinx-Autosummary-Recursion)
+
+
+## Пример
+
+- **conf.py**:
+
+  ```python
+  extensions = [
+      ...,
+      'sphinx.ext.autosummary',
+      ...
+  ]
+  autosummary_generate = True
+  ```
+
+- **autotoc.autosummary.rst**:
+
+  ```rst
+  API reference 
+  
+  .. autosummary::
+     :toctree: _autosummary
+     :recursive:
+     
+     python_module_name
+  ```
+  
+  ``python_module_name`` - название документируемого python-модуля.
+
+> [!IMPORTANT]
+> ``python_module_name`` должен быть доступен для импорта во время работы sphinx.
+>
+> Некоторые из способов добиться этого:
+> 
+> - добавить путь к модулю в ``PYTHONPATH`` перед запуском сборки
+> - добавить путь к модулю в ``sys.path`` в **conf.py**
