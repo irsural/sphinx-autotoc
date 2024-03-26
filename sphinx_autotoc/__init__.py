@@ -282,9 +282,14 @@ def _make_search_paths(root: Path, f: list[Path], index: bool) -> str:
 
         if p.as_posix() not in search_paths:
             search_paths.append(p.as_posix())
-    search_paths.sort(key=lambda x: Path(x).stem.replace(f"{SPHINX_SERVICE_FILE_PREFIX}.", ""))
+    search_paths.sort(key=process_path)
     return "\f".join(search_paths)
 
+
+def process_path(file: str):
+    file_name = Path(file).stem
+    is_directory = not file_name.startswith("autotoc.")  # "not" потому что в сортировке false появляется раньше true
+    return is_directory, file_name.replace(f"{SPHINX_SERVICE_FILE_PREFIX}.", "")
 
 def _iter_dirs(docs_directory: Path, cfg: Config) -> Iterator[tuple[Path, list[Path]]]:
     """
