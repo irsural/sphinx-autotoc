@@ -3,6 +3,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Iterator
 
+from natsort import natsorted
 from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx.util import logging
@@ -282,7 +283,7 @@ def _make_search_paths(root: Path, f: list[Path], index: bool) -> str:
 
         if p.as_posix() not in search_paths:
             search_paths.append(p.as_posix())
-    search_paths.sort(key=process_path)
+    search_paths = natsorted(search_paths, key=process_path)
     return "\f".join(search_paths)
 
 
@@ -300,9 +301,9 @@ def _iter_dirs(docs_directory: Path, cfg: Config) -> Iterator[tuple[Path, list[P
     :return: Кортеж из пути до папки и отсортированного содержимого этой папки.
     """
     mp = _flatmap(docs_directory, cfg)
-    skeys = sorted(mp.keys())
+    skeys = natsorted(mp.keys())
     for root in skeys:
-        sub = sorted(mp[root])
+        sub = natsorted(mp[root])
         yield root, sub
 
 
