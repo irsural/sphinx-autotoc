@@ -11,7 +11,7 @@
 ### Установка
 
 ```bash
-pip install sphinx-autotoc
+pip install git+https://github.com/irsural/sphinx-autotoc
 ``` 
 
 Расширение добавляется в файл конфигурации sphinx (**conf.py**), так же как и другие расширения sphinx:
