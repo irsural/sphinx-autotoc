@@ -6,6 +6,7 @@ from typing import Iterator
 from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx.util import logging
+from sphinx.errors import ExtensionError
 
 logger = logging.getLogger(__name__)
 SPHINX_SERVICE_FILE_PREFIX = "autotoc"
@@ -60,8 +61,7 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
     trim_folder_numbers = cfg["sphinx_autotoc_trim_folder_numbers"]
     src_path = docs_directory / "src"
     if not src_path.exists() or not any(src_path.iterdir()):
-        logger.error("Папка 'src' не существует или пуста.")
-        return
+        raise ExtensionError(f"Папка {src_path} не существует или пуста.")
     autosummary_flag = False
     autosummary_dict = defaultdict(tuple)
 
