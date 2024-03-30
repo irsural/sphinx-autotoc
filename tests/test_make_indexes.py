@@ -1,10 +1,12 @@
 import os
-import pytest
-from textwrap import dedent
 from pathlib import Path
-from sphinx_autotoc import make_indexes, trim_leading_numbers
+from textwrap import dedent
+
+import pytest
 from sphinx.config import Config
 from sphinx.errors import ConfigError
+
+from sphinx_autotoc import make_indexes, trim_leading_numbers
 
 MAKE_INDEXES_TEST_PROJECTS_DIR = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "make_indexes_test_projects"
@@ -60,7 +62,7 @@ class TestMakeIndexesFlags:
             .. toctree::
                :maxdepth: 2
                :caption: Содержание
-            
+
                src/1. level1/autotoc.1. level1.rst
             """)
 
@@ -78,7 +80,7 @@ class TestMakeIndexesFlags:
             .. toctree::
                :maxdepth: 2
                :caption: 1. level1
-            
+
                src/1. level1/2. level2/autotoc.2. level2.rst
                src/1. level1/l1.rst
                src/1. level1/l1.1.rst
@@ -96,11 +98,11 @@ class TestMakeIndexesFlags:
             assert f.read() == dedent("""
             level1
             ==========
-            
-            
+
+
             .. toctree::
                :maxdepth: 2
-            
+
                2. level2/autotoc.2. level2.rst
                l1.rst
                l1.1.rst
@@ -121,7 +123,7 @@ class TestMakeIndexesFlags:
             .. toctree::
                :maxdepth: 2
                :caption: level1
-            
+
                src/1. level1/2. level2/autotoc.2. level2.rst
                src/1. level1/l1.rst
                src/1. level1/l1.1.rst
@@ -140,7 +142,7 @@ class TestMakeIndexesFlags:
             .. toctree::
                :maxdepth: 2
                :caption: custom header
-            
+
                src/1. level1/autotoc.1. level1.rst
                """)
 
