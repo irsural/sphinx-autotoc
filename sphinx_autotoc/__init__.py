@@ -89,7 +89,7 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
         f.write(main_page.format(project=cfg.project, dop="=" * len(cfg.project)))
 
     if autosummary_flag:
-        _replace_autosummary(autosummary_dict, docs_directory, index)  # type: ignore[arg-type]
+        _replace_autosummary(autosummary_dict, docs_directory, index)
 
 
 def _check_autosummary_flag(cfg: Config) -> bool:
@@ -107,12 +107,14 @@ def _process_dir_and_files(
         autosummary_dict: dict[Path, tuple[str, str]],
         get_headers_from_subfolder: bool,
         main_page_dirs: dict[Path, list[Path]],
-        trim_folder_numbers: bool):
+        trim_folder_numbers: bool) -> None:
 
     if autosummary_flag:
         for file in current_dir_files:
             if file.name == "autotoc.autosummary.rst":
-                autosummary_dict[current_dir / file] = _parse_autosummary(current_dir / file)
+                autosummary_info = _parse_autosummary(current_dir / file)
+                if autosummary_info:
+                    autosummary_dict[current_dir / file] = autosummary_info
 
     if current_dir.name == "_autosummary":
         return
@@ -120,6 +122,18 @@ def _process_dir_and_files(
     if current_dir != src_path:
         _add_to_nav(current_dir, current_dir_files, trim_folder_numbers)
 
+    _update_main_page_dirs(main_page_dirs,
+                           get_headers_from_subfolder,
+                           current_dir,
+                           src_path,
+                           current_dir_files)
+
+
+def _update_main_page_dirs(main_page_dirs: dict[Path, list[Path]],
+                           get_headers_from_subfolder: bool,
+                           current_dir: Path,
+                           src_path: Path,
+                           current_dir_files: list[Path]):
     if get_headers_from_subfolder:
         if current_dir.parent == src_path:
             main_page_dirs.update({current_dir: current_dir_files})
@@ -132,7 +146,8 @@ def _process_dir_and_files(
 
 def _check_folder_existence(folder: Path) -> None:
     if not folder.exists() or not any(folder.iterdir()):
-        raise ExtensionError(f"Папка {folder} не существует или пуста.")
+        errormsg = f"Папка {folder} не существует или пуста."
+        raise ExtensionError(errormsg)
 
 
 def _replace_autosummary(autosummary_dict: dict[Path, tuple[str, str]],
@@ -148,7 +163,7 @@ def _replace_autosummary(autosummary_dict: dict[Path, tuple[str, str]],
     for file_path, (file_header, module_name) in autosummary_dict.items():
         if any((file_header, module_name, file_path)) is None:
             continue
-        logger.info(f"module_name: {module_name}, file_path: {file_path}")
+        logger.debug("module name: %s, file path:%s", module_name, file_path)
         logger.info("Working on autosummary reference...")
         autosummary_index = _get_dir_index(file_path.parent)
         if autosummary_index.parent == docs_directory:
@@ -182,7 +197,7 @@ def _replace_autosummary_with_api_reference(index: Path, file_path: Path,
         f.truncate()
 
 
-def _parse_autosummary(file: Path) -> tuple[str, str] | tuple[None, None]:
+def _parse_autosummary(file: Path) -> tuple[str, str] | None:
     """
     Парсит файл с директивой autosummary.
 
@@ -198,7 +213,7 @@ def _parse_autosummary(file: Path) -> tuple[str, str] | tuple[None, None]:
             next_line = lines[j].strip()
             if len(next_line) > 1 and not next_line.startswith(':'):
                 return lines[0].strip(), next_line
-    return None, None
+    return None
 
 
 def _add_to_main_page(
@@ -363,11 +378,9 @@ def _flatmap(docs_directory: Path, cfg: Config) -> dict[Path, set[Path]]:
     """
     roots: dict[Path, set[Path]] = defaultdict(set)
     for file in _list_files(docs_directory):
-        if file.parent.name:
-            if file.suffix in cfg.source_suffix.keys():
-                roots[docs_directory / file.parent].add(Path(file.name))
-            elif (docs_directory / file).is_dir():
-                roots[docs_directory / file.parent].add(Path(file.name))
+        if (file.parent.name and
+                (file.suffix in cfg.source_suffix or (docs_directory / file).is_dir())):
+            roots[docs_directory / file.parent].add(Path(file.name))
     return roots
 
 
