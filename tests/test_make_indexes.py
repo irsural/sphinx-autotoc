@@ -12,7 +12,8 @@ MAKE_INDEXES_TEST_PROJECTS_DIR = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "make_indexes_test_projects"
 )
 
-def activate_cfg(path: Path):
+
+def activate_cfg(path: Path) -> Config:
     cfg = Config.read(path)
     cfg.pre_init_values()
     cfg.init_values()
@@ -50,6 +51,7 @@ class TestTrimLeadingNumbers:
 class TestMakeIndexesFlags:
 
     project_path = Path(MAKE_INDEXES_TEST_PROJECTS_DIR, "3_levels_of_nesting")
+
     def test_make_indexes_default_flags(self) -> None:
         cfg = activate_cfg(self.project_path)
 
@@ -150,7 +152,7 @@ class TestMakeIndexesFlags:
 class TestAutosummaryCompatibility:
     project_path = Path(MAKE_INDEXES_TEST_PROJECTS_DIR, "autosummary_test")
 
-    @pytest.mark.parametrize("test_file_path, test_file_line", [  # type: ignore[misc]
+    @pytest.mark.parametrize("test_file_path, test_file_line", [
         (project_path / "autotoc.rst",
          "   L1header <src/1. level1/_autosummary/Level1>\n"),
         (project_path / "src/1. level1/autotoc.1. level1.rst",
@@ -163,7 +165,7 @@ class TestAutosummaryCompatibility:
     def test_autosummary_in_several_levels(self, test_file_path: Path, test_file_line: str) -> None:
         cfg = activate_cfg(self.project_path)
         cfg.add('autosummary_generate', True, 'html', bool)
-        cfg.sphinx_autotoc_get_headers_from_subfolder = True
+        cfg["sphinx_autotoc_get_headers_from_subfolder"] = True
         cfg.post_init_values()
         make_indexes(self.project_path, cfg)
         assert os.path.isfile(test_file_path)
