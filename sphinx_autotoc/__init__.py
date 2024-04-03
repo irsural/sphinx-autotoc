@@ -287,7 +287,7 @@ def _make_search_paths(root: Path, f: list[Path], index: bool) -> str:
     return "\f".join(search_paths)
 
 
-def process_path(file: str):
+def process_path(file: str) -> tuple[bool, str]:
     file_name = Path(file).stem
     is_directory = not file_name.startswith("autotoc.")  # "not" потому что в сортировке false появляется раньше true
     return is_directory, file_name.replace(f"{SPHINX_SERVICE_FILE_PREFIX}.", "")
