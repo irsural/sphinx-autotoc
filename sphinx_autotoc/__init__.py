@@ -11,7 +11,7 @@ from sphinx.util import logging
 logger = logging.getLogger(__name__)
 SPHINX_SERVICE_FILE_PREFIX = "autotoc"
 SPHINX_INDEX_FILE_NAME = "autotoc.rst"
-IGNORE_LIST = {".git", ".idea", "logs", ".venv", ".vscode", "venv"}
+IGNORE_LIST = set()
 NAV_PATTERN = """
 {dirname}
 ==========
@@ -60,6 +60,7 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
     header_text = cfg["sphinx_autotoc_header"]
     trim_folder_numbers = cfg["sphinx_autotoc_trim_folder_numbers"]
     src_path = docs_directory / "src"
+    IGNORE_LIST.update(cfg["exclude_patterns"])
     _check_folder_existence(src_path)
     autosummary_flag = _check_autosummary_flag(cfg)
     autosummary_dict: dict[Path, tuple[str, str]] = {}
