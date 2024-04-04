@@ -7,6 +7,7 @@ from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx.errors import ExtensionError
 from sphinx.util import logging
+from sphinx.util.matching import Matcher
 
 logger = logging.getLogger(__name__)
 SPHINX_SERVICE_FILE_PREFIX = "autotoc"
@@ -393,16 +394,18 @@ def _list_files(docs_directory: Path) -> set[Path]:
     :return: Пути к файлам.
     """
     result = set()
-    ignore_list = IGNORE_LIST.union({'_'})  # Add underscore prefix to ignore list
 
-    for root, dirs, files in os.walk(docs_directory):
+    matcher = Matcher(IGNORE_LIST)
+    for root, _, files in os.walk(docs_directory):
         root_path = Path(root)
         relative_root = root_path.relative_to(docs_directory)
 
+        if matcher.match(root):
+            continue
 
         for file in files:
             file_path = relative_root / file
-            if not any(part in ignore_list for part in file_path.parts) and file_path.suffix == '.rst':
+            if not matcher.match(str(file_path)) and file_path.suffix == '.rst':
                 result.add(file_path)
 
         if any(file.endswith('.rst') for file in os.listdir(root)):
