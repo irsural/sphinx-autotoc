@@ -399,8 +399,6 @@ def _list_files(docs_directory: Path) -> set[Path]:
         root_path = Path(root)
         relative_root = root_path.relative_to(docs_directory)
 
-        # Filter out ignored directories
-        dirs[:] = [d for d in dirs if not any(part in ignore_list for part in (relative_root / d).parts)]
 
         for file in files:
             file_path = relative_root / file
