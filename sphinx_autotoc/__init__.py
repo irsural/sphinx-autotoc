@@ -392,30 +392,21 @@ def _list_files(docs_directory: Path) -> set[Path]:
     :return: Пути к файлам.
     """
     result = set()
-
-    def _should_ignore(p: Path) -> bool:
-        return (any(part in IGNORE_LIST for part in p.parts)
-                or any(part.startswith("_") for part in p.parts))
+    ignore_list = IGNORE_LIST.union({'_'})  # Add underscore prefix to ignore list
 
     for root, dirs, files in os.walk(docs_directory):
-        if _should_ignore(Path(root)):
-            continue
+        root_path = Path(root)
+        relative_root = root_path.relative_to(docs_directory)
 
-        # Filter out ignored directories and their contents
-        dirs[:] = [d for d in dirs if not _should_ignore(Path(os.path.join(root, d)))]
+        # Filter out ignored directories
+        dirs[:] = [d for d in dirs if not any(part in ignore_list for part in (relative_root / d).parts)]
 
         for file in files:
-            if _should_ignore(Path(os.path.join(root, file))):
-                continue
-            result.add(
-                Path(os.path.relpath(os.path.join(root, file), start=docs_directory))
-            )
+            file_path = relative_root / file
+            if not any(part in ignore_list for part in file_path.parts) and file_path.suffix == '.rst':
+                result.add(file_path)
 
-        for directory in dirs:
-            result.add(
-                Path(
-                    os.path.relpath(os.path.join(root, directory), start=docs_directory)
-                )
-            )
+        if any(file.endswith('.rst') for file in os.listdir(root)):
+            result.add(relative_root)
 
     return result
