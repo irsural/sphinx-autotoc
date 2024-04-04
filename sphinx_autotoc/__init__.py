@@ -269,22 +269,28 @@ def _make_search_paths(root: Path, f: list[Path], index: bool) -> str:
     :param index: Добавлять ли в путь к файлу корневую папку.
     :return: Строка путей, разделённая символом \f.
     """
-    search_paths = []
+    file_paths = set()
+    folder_paths = set()
     for file in f:
         p = ("src" if root.parent.name == "src" else "") / Path(root.name) if index else Path("")
         if (root / file).is_dir():
             p /= file / _get_dir_index(file).name
+            folder_paths.add(p.as_posix())
         else:
             p /= file
 
-        # Если смотрим файл содержания текущей папки
-        if p.stem.split(".", maxsplit=1) == [SPHINX_SERVICE_FILE_PREFIX, root.name]:
-            continue
+            # Если смотрим файл содержания текущей папки
+            if p.stem.split(".", maxsplit=1) == [SPHINX_SERVICE_FILE_PREFIX, root.name]:
+                continue
+            # Если смотрим файл содержания другой папки
+            if p.name.startswith(f"{SPHINX_SERVICE_FILE_PREFIX}."):
+                folder_paths.add(p.as_posix())
+            else:
+                file_paths.add(p.as_posix())
 
-        if p.as_posix() not in search_paths:
-            search_paths.append(p.as_posix())
-    search_paths = natsorted(search_paths, key=process_path)
-    return "\f".join(search_paths)
+    file_paths = natsorted(file_paths, key=process_path)
+    folder_paths = natsorted(folder_paths, key=process_path)
+    return "\f".join(folder_paths + file_paths)
 
 
 def process_path(file: str) -> tuple[bool, str]:
