@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from textwrap import dedent
 
+from sphinx_autotoc import _list_files
 import pytest
 from sphinx.config import Config
 from sphinx.errors import ConfigError
@@ -172,3 +173,52 @@ class TestAutosummaryCompatibility:
         with open(test_file_path) as f:
             lines = f.readlines()
             assert test_file_line in lines
+
+
+@pytest.fixture
+def mock_docs_dir(tmp_path):
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    (docs_dir / "dir1").mkdir()
+    (docs_dir / "dir1" / "file1.rst").touch()
+    (docs_dir / "dir1" / "file2.txt").touch()
+    (docs_dir / "dir2").mkdir()
+    (docs_dir / "_dir2").mkdir()
+    (docs_dir / "_dir2" / "somefile.rst").touch()
+    (docs_dir / "dir2" / "file3.rst").touch()
+    (docs_dir / "_ignored_dir").mkdir()
+    (docs_dir / "root_file.rst").touch()
+    (docs_dir / "_ignored_file.rst").touch()
+    (docs_dir / "empty_dir").mkdir()
+    return docs_dir
+
+
+class TestListFiles:
+
+    def test_list_files(self, mock_docs_dir):
+        result = _list_files(mock_docs_dir)
+        expected = {
+            Path("."),
+            Path("root_file.rst"),
+            Path("dir1"),
+            Path("dir1/file1.rst"),
+            Path("dir2"),
+            Path("dir2/file3.rst"),
+        }
+        assert result == expected
+
+    def test_ignore_empty_directories(self, mock_docs_dir):
+        result = _list_files(mock_docs_dir)
+        assert Path("empty_dir") not in result
+
+    def test_ignore_underscored_directories(self, mock_docs_dir):
+        result = _list_files(mock_docs_dir)
+        assert Path("_ignored_dir") not in result
+
+    def test_ignore_underscored_files(self, mock_docs_dir):
+        result = _list_files(mock_docs_dir)
+        assert Path("_ignored_file.rst") not in result
+
+    def test_non_rst_files_ignored(self, mock_docs_dir):
+        result = _list_files(mock_docs_dir)
+        assert Path("dir1/file2.txt") not in result
