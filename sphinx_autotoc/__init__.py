@@ -394,7 +394,7 @@ def _list_files(docs_directory: Path) -> set[Path]:
     :return: Пути к файлам.
     """
     result = set()
-
+    IGNORE_LIST.add("**/_*")
     matcher = Matcher(IGNORE_LIST)
     for root, _, files in os.walk(docs_directory):
         root_path = Path(root)
