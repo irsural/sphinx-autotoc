@@ -403,12 +403,14 @@ def _list_files(docs_directory: Path) -> set[Path]:
         if matcher.match(root):
             continue
 
+        dir_has_rst_files = False
         for file in files:
             file_path = relative_root / file
             if not matcher.match(str(file_path)) and file_path.suffix == '.rst':
                 result.add(file_path)
+                dir_has_rst_files = True
 
-        if any(file.endswith('.rst') for file in os.listdir(root)):
+        if dir_has_rst_files:
             result.add(relative_root)
 
     return result
