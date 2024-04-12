@@ -12,7 +12,6 @@ from sphinx.util.matching import Matcher
 logger = logging.getLogger(__name__)
 SPHINX_SERVICE_FILE_PREFIX = "autotoc"
 SPHINX_INDEX_FILE_NAME = "autotoc.rst"
-IGNORE_LIST = set()
 NAV_PATTERN = """
 {dirname}
 ==========
@@ -61,7 +60,6 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
     header_text = cfg["sphinx_autotoc_header"]
     trim_folder_numbers = cfg["sphinx_autotoc_trim_folder_numbers"]
     src_path = docs_directory / "src"
-    IGNORE_LIST.update(cfg["exclude_patterns"])
     _check_folder_existence(src_path)
     autosummary_flag = _check_autosummary_flag(cfg)
     autosummary_dict: dict[Path, tuple[str, str]] = {}
@@ -379,14 +377,14 @@ def _flatmap(docs_directory: Path, cfg: Config) -> dict[Path, set[Path]]:
     :return: Маршруты файлов в папке
     """
     roots: dict[Path, set[Path]] = defaultdict(set)
-    for file in _list_files(docs_directory):
+    for file in _list_files(docs_directory, cfg["exclude_patterns"]):
         if (file.parent.name and
                 (file.suffix in cfg.source_suffix or (docs_directory / file).is_dir())):
             roots[docs_directory / file.parent].add(Path(file.name))
     return roots
 
 
-def _list_files(docs_directory: Path) -> set[Path]:
+def _list_files(docs_directory: Path, patterns: list[str]) -> set[Path]:
     """
     Составляет список файлов в папках. Игнорирует файлы и папки, указанные в IGNORE_LIST
 
@@ -394,8 +392,7 @@ def _list_files(docs_directory: Path) -> set[Path]:
     :return: Пути к файлам.
     """
     result = set()
-    IGNORE_LIST.add("**/_*")
-    matcher = Matcher(IGNORE_LIST)
+    matcher = Matcher(patterns)
     for root, _, files in os.walk(docs_directory):
         root_path = Path(root)
         relative_root = root_path.relative_to(docs_directory)
@@ -406,7 +403,8 @@ def _list_files(docs_directory: Path) -> set[Path]:
         dir_has_rst_files = False
         for file in files:
             file_path = relative_root / file
-            if not matcher.match(str(file_path)) and file_path.suffix == '.rst':
+            if not matcher.match(str(file_path)) and file_path.suffix == '.rst'\
+                    and not relative_root.name.startswith("_"):
                 result.add(file_path)
                 dir_has_rst_files = True
 
