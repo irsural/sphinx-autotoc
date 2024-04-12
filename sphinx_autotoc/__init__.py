@@ -288,16 +288,11 @@ def _make_search_paths(root: Path, f: list[Path], index: bool) -> str:
             else:
                 file_paths.add(p.as_posix())
 
-    file_paths = natsorted(file_paths, key=process_path)
-    folder_paths = natsorted(folder_paths, key=process_path)
+    file_paths = natsorted(file_paths, key=lambda x: Path(x).stem)
+    folder_paths = natsorted(folder_paths, key=lambda x: Path(x).stem.replace(
+        f"{SPHINX_SERVICE_FILE_PREFIX}.", ""))
     return "\f".join(folder_paths + file_paths)
 
-
-def process_path(file: str) -> tuple[bool, str]:
-    file_name = Path(file).stem
-    # "not" потому что в сортировке false появляется раньше true
-    is_generated_by_extension = not file_name.startswith(f"{SPHINX_SERVICE_FILE_PREFIX}.")
-    return is_generated_by_extension, file_name.replace(f"{SPHINX_SERVICE_FILE_PREFIX}.", "")
 
 def _iter_dirs(docs_directory: Path, cfg: Config) -> Iterator[tuple[Path, list[Path]]]:
     """
