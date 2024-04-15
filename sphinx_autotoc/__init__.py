@@ -286,11 +286,8 @@ def _make_search_paths(root: Path, f: list[Path], index: bool) -> str:
             # Если смотрим файл содержания текущей папки
             if p.stem.split(".", maxsplit=1) == [SPHINX_SERVICE_FILE_PREFIX, root.name]:
                 continue
-            # Если смотрим файл содержания другой папки
-            if p.name.startswith(f"{SPHINX_SERVICE_FILE_PREFIX}."):
-                folder_paths.add(p.as_posix())
-            else:
-                file_paths.add(p.as_posix())
+
+            file_paths.add(p.as_posix())
 
     file_paths = natsorted(file_paths, key=lambda x: Path(x).stem)
     folder_paths = natsorted(folder_paths, key=lambda x: Path(x).stem.replace(
