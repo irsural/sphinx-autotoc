@@ -2,7 +2,7 @@ import os
 import pytest
 from textwrap import dedent
 from pathlib import Path
-from sphinx_autotoc import make_indexes, trim_leading_numbers
+from sphinx_autotoc import make_indexes, trim_leading_numbers, _make_search_paths
 from sphinx.config import Config
 from sphinx.errors import ConfigError
 
@@ -168,3 +168,24 @@ class TestAutosummaryCompatibility:
         with open(test_file_path) as f:
             lines = f.readlines()
             assert test_file_line in lines
+
+
+class TestMakeSearchPaths:
+
+    def test_folders_before_files(self, tmp_path):
+        root = Path(tmp_path) / "root"
+        root.mkdir()
+        files = [
+            Path("file1.txt"),
+            Path("file2.py"),
+            Path("folder1"),
+            Path("folder2"),
+        ]
+        (root / "folder1").mkdir()
+        (root / "folder2").mkdir()
+        search_paths = _make_search_paths(root, files, index=False)
+        paths = search_paths.split("\f")
+        # 0 - папки, 1 - файлы
+        folder_file_mask = [0 if Path(item).name.startswith("autotoc") else 1 for item in paths]
+
+        assert sorted(folder_file_mask) == folder_file_mask, "Folders should come before files"
