@@ -212,3 +212,39 @@ class TestMakeSearchPaths:
         folder_file_mask = [0 if Path(item).name.startswith("autotoc") else 1 for item in paths]
 
         assert sorted(folder_file_mask) == folder_file_mask, "Folders should come before files"
+
+    @pytest.mark.parametrize(
+        "root_addition, files, index, expected_file_paths",
+        [
+            ("", [Path("file1.txt"), Path("file2.txt"), Path("folder1"), Path("folder2")], False, [
+                "folder1/autotoc.folder1.rst",
+                "folder2/autotoc.folder2.rst",
+                "file1.txt",
+                "file2.txt",
+            ]),
+            ("", [Path("file1.txt"), Path("file2.txt"), Path("folder1"), Path("folder2")], True, [
+                "src/folder1/autotoc.folder1.rst",
+                "src/folder2/autotoc.folder2.rst",
+                "src/file1.txt",
+                "src/file2.txt",
+            ]),
+            ("folder1", [Path("file3.txt"), Path("subfolder1")], False, [
+                "subfolder1/autotoc.subfolder1.rst",
+                "file3.txt",
+            ]),
+            ("folder1", [Path("file3.txt"), Path("subfolder1")], True, [
+                "src/folder1/subfolder1/autotoc.subfolder1.rst",
+                "src/folder1/file3.txt",
+            ]),
+            ("folder2", [Path("file2.txt")], False, [
+                "file2.txt",
+            ]),
+            ("folder2", [Path("file2.txt")], True, [
+                "src/folder2/file2.txt",
+            ]),
+        ],
+    )
+    def test_make_search_paths(self, root_addition, files, index, expected_file_paths, file_tree):
+        root = file_tree / root_addition
+        search_paths = _make_search_paths(root, files, index)
+        assert search_paths == "\f".join(expected_file_paths)
