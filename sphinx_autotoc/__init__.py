@@ -276,7 +276,13 @@ def _make_search_paths(root: Path, f: list[Path], index: bool) -> str:
     file_paths = set()
     folder_paths = set()
     for file in f:
-        p = ("src" if root.parent.name == "src" else "") / Path(root.name) if index else Path("")
+        if not index:
+            p = Path("")
+        else:
+            p = Path(root.name)
+            if root.parent.name == "src":
+                p = "src" / p
+
         if (root / file).is_dir():
             p /= file / _get_dir_index(file).name
             folder_paths.add(p.as_posix())
