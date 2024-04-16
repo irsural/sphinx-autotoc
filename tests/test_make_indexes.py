@@ -170,6 +170,30 @@ class TestAutosummaryCompatibility:
             assert test_file_line in lines
 
 
+@pytest.fixture
+def file_tree(tmp_path):
+    src = tmp_path / "src"
+    src.mkdir()
+    folder1 = src / "folder1"
+    folder1.mkdir()
+    folder2 = src / "folder2"
+    folder2.mkdir()
+
+    subfolder1 = folder1 / "subfolder1"
+    subfolder1.mkdir()
+
+    file1 = folder1 / "file1.txt"
+    file1.write_text("Content of file1")
+
+    file2 = folder2 / "file2.txt"
+    file2.write_text("Content of file2")
+
+    file3 = subfolder1 / "file3.txt"
+    file3.write_text("Content of file3")
+
+    return src
+
+
 class TestMakeSearchPaths:
 
     def test_folders_before_files(self, tmp_path):
