@@ -196,18 +196,17 @@ def file_tree(tmp_path):
 
 class TestMakeSearchPaths:
 
-    def test_folders_before_files(self, tmp_path):
-        root = Path(tmp_path) / "root"
-        root.mkdir()
+    def test_folders_before_files(self, file_tree):
+        (file_tree / "file1.txt").touch()
+        (file_tree / "file2.py").touch()
         files = [
             Path("file1.txt"),
             Path("file2.py"),
             Path("folder1"),
             Path("folder2"),
         ]
-        (root / "folder1").mkdir()
-        (root / "folder2").mkdir()
-        search_paths = _make_search_paths(root, files, index=False)
+
+        search_paths = _make_search_paths(file_tree, files, index=False)
         paths = search_paths.split("\f")
         # 0 - папки, 1 - файлы
         folder_file_mask = [0 if Path(item).name.startswith("autotoc") else 1 for item in paths]
