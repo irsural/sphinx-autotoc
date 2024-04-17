@@ -404,7 +404,8 @@ def _list_files(docs_directory: Path, exclude_patterns: list[str]) -> set[Path]:
         dir_has_rst_files = False
         for file in files:
             file_path = relative_root / file
-            if not matcher.match(str(file_path)) and file_path.suffix == '.rst'\
+            if not any(matcher.match(file_path_part) for file_path_part in file_path.parts) \
+                    and file_path.suffix == '.rst'\
                     and not relative_root.name.startswith("_"):
                 result.add(file_path)
                 dir_has_rst_files = True
