@@ -175,51 +175,57 @@ class TestAutosummaryCompatibility:
             assert test_file_line in lines
 
 
-@pytest.fixture
-def mock_docs_dir(tmp_path):
-    docs_dir = tmp_path / "docs"
-    docs_dir.mkdir()
-    (docs_dir / "dir1").mkdir()
-    (docs_dir / "dir1" / "file1.rst").touch()
-    (docs_dir / "dir1" / "file2.txt").touch()
-    (docs_dir / "dir2").mkdir()
-    (docs_dir / "_dir2").mkdir()
-    (docs_dir / "_dir2" / "somefile.rst").touch()
-    (docs_dir / "dir2" / "file3.rst").touch()
-    (docs_dir / "_ignored_dir").mkdir()
-    (docs_dir / "root_file.rst").touch()
-    (docs_dir / "_not_ignored_file.rst").touch()
-    (docs_dir / "empty_dir").mkdir()
-    return docs_dir
-
-
 class TestListFiles:
 
-    def test_list_files(self, mock_docs_dir):
-        result = _list_files(mock_docs_dir, [])
-        expected = {
-            Path("."),
-            Path("root_file.rst"),
-            Path("dir1"),
-            Path("dir1/file1.rst"),
-            Path("dir2"),
-            Path("dir2/file3.rst"),
-            Path("_not_ignored_file.rst"),
-        }
-        assert result == expected
+    @pytest.mark.parametrize(["dir_structure", "expected_paths", "excluded_patterns"], [
+        (["root_file.rst",
+          "dir1/file1.rst",
+          "dir2/file3.rst"], {Path(item) for item in [
+                              ".",
+                              "root_file.rst",
+                              "dir1",
+                              "dir1/file1.rst",
+                              "dir2",
+                              "dir2/file3.rst"]}, []),
+        (["dir1/file1.rst",
+          "empty_directory"], {Path(item) for item in [
+                               "dir1",
+                               "dir1/file1.rst"]}, ""),
+        (["dir1/file1.rst",
+          "_dir2/file2.rst",
+          "dir1/_hidden_subdir/subfile.rst"], {Path(item) for item in [
+                                               "dir1/file1.rst",
+                                               "dir1"]}, []),
+        (["_root_file.rst",
+          "dir1/file1.rst",
+          "dir2/_file2.rst"], {Path(item) for item in [
+                               ".",
+                               "_root_file.rst",
+                               "dir1",
+                               "dir1/file1.rst",
+                               "dir2",
+                               "dir2/_file2.rst",]}, []),
+        (["shown_folder/visible_file.rst",
+          "hidden_folder/file.rst",
+          "mixed_folder/hidden_file.rst",
+          "mixed_folder/visible_file.rst"], {Path(item) for item in [
+                                             "mixed_folder",
+                                             "shown_folder",
+                                             "shown_folder/visible_file.rst",
+                                             "mixed_folder/visible_file.rst"]}, ["*hidden*"]),
+        (["rst/rst-file.rst",
+          "txt/txt-file.txt"], {Path(item) for item in [
+                                "rst",
+                                "rst/rst-file.rst"]}, [])
+    ])
+    def test_list_files(self, dir_structure: list[Path], expected_paths, tmp_path, excluded_patterns):
+        for item in dir_structure:
+            item = tmp_path / item
+            if item.suffix == '':
+                item.mkdir(parents=True, exist_ok=True)
+            else:
+                item.parent.mkdir(parents=True, exist_ok=True)
+                item.touch()
 
-    def test_ignore_empty_directories(self, mock_docs_dir):
-        result = _list_files(mock_docs_dir, [])
-        assert Path("empty_dir") not in result
-
-    def test_ignore_underscored_directories(self, mock_docs_dir):
-        result = _list_files(mock_docs_dir, [])
-        assert Path("_ignored_dir") not in result
-
-    def test_keep_underscored_files(self, mock_docs_dir):
-        result = _list_files(mock_docs_dir, [])
-        assert Path("_not_ignored_file.rst") in result
-
-    def test_non_rst_files_ignored(self, mock_docs_dir):
-        result = _list_files(mock_docs_dir, [])
-        assert Path("dir1/file2.txt") not in result
+        result = _list_files(tmp_path, excluded_patterns)
+        assert result == expected_paths
