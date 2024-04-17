@@ -386,7 +386,8 @@ def _flatmap(docs_directory: Path, cfg: Config) -> dict[Path, set[Path]]:
 
 def _list_files(docs_directory: Path, patterns: list[str]) -> set[Path]:
     """
-    Составляет список файлов в папках. Игнорирует файлы и папки, указанные в IGNORE_LIST
+    Составляет список файлов в папках. Игнорирует файлы и папки, указанные в параметре
+    exclude_patterns в конфигурации.
 
     :param docs_directory: Папка с документацией.
     :return: Пути к файлам.
