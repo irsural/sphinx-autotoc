@@ -384,7 +384,7 @@ def _flatmap(docs_directory: Path, cfg: Config) -> dict[Path, set[Path]]:
     return roots
 
 
-def _list_files(docs_directory: Path, patterns: list[str]) -> set[Path]:
+def _list_files(docs_directory: Path, exclude_patterns: list[str]) -> set[Path]:
     """
     Составляет список файлов в папках. Игнорирует файлы и папки, указанные в параметре
     exclude_patterns в конфигурации.
@@ -393,7 +393,7 @@ def _list_files(docs_directory: Path, patterns: list[str]) -> set[Path]:
     :return: Пути к файлам.
     """
     result = set()
-    matcher = Matcher(patterns)
+    matcher = Matcher(exclude_patterns)
     for root, _, files in os.walk(docs_directory):
         root_path = Path(root)
         relative_root = root_path.relative_to(docs_directory)
