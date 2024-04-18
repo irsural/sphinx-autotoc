@@ -290,7 +290,7 @@ def _make_search_paths(root: Path, f: list[Path], index: bool) -> str:
             p /= file
 
             # Если смотрим файл содержания текущей папки
-            if p.stem.split(".", maxsplit=1) == [SPHINX_SERVICE_FILE_PREFIX, root.name]:
+            if p.stem == f"{SPHINX_SERVICE_FILE_PREFIX}.{root.name}":
                 continue
 
             file_paths.add(p.as_posix())
