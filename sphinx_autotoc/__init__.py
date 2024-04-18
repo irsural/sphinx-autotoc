@@ -275,12 +275,14 @@ def _make_search_paths(root: Path, f: list[Path], index: bool) -> str:
     """
     file_paths = set()
     folder_paths = set()
+    root_parent = root.parent.name
+    root_name = Path(root.name)
     for file in f:
         if not index:
             p = Path("")
         else:
-            p = Path(root.name)
-            if root.parent.name == "src":
+            p = root_name
+            if root_parent == "src":
                 p = "src" / p
 
         if (root / file).is_dir():
