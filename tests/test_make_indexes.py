@@ -162,7 +162,6 @@ class TestAutosummaryCompatibility:
         cfg = activate_cfg(self.project_path)
         cfg.add('autosummary_generate', True, 'html', bool)
         cfg.sphinx_autotoc_get_headers_from_subfolder = True
-        cfg.post_init_values()
         make_indexes(self.project_path, cfg)
         assert os.path.isfile(test_file_path)
         with open(test_file_path) as f:
@@ -244,7 +243,7 @@ class TestMakeSearchPaths:
             ]),
         ],
     )
-    def test_make_search_paths(self, root_addition, files, index, expected_file_paths, file_tree):
+    def test_search_paths_generation(self, root_addition, files, index, expected_file_paths, file_tree):
         root = file_tree / root_addition
         search_paths = _make_search_paths(root, files, index)
         assert search_paths == "\f".join(expected_file_paths)
