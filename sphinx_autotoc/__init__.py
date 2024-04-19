@@ -133,7 +133,7 @@ def _update_main_page_dirs(main_page_dirs: dict[Path, list[Path]],
                            get_headers_from_subfolder: bool,
                            current_dir: Path,
                            src_path: Path,
-                           current_dir_files: list[Path]):
+                           current_dir_files: list[Path]) -> None:
     if get_headers_from_subfolder:
         if current_dir.parent == src_path:
             main_page_dirs.update({current_dir: current_dir_files})

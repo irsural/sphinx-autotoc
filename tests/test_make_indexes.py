@@ -2,12 +2,11 @@ import os
 from pathlib import Path
 from textwrap import dedent
 
-from sphinx_autotoc import _list_files
 import pytest
 from sphinx.config import Config
 from sphinx.errors import ConfigError
 
-from sphinx_autotoc import make_indexes, trim_leading_numbers
+from sphinx_autotoc import _list_files, make_indexes, trim_leading_numbers
 
 MAKE_INDEXES_TEST_PROJECTS_DIR = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "make_indexes_test_projects"
@@ -218,7 +217,8 @@ class TestListFiles:
                                 "rst",
                                 "rst/rst-file.rst"]}, [])
     ])
-    def test_list_files(self, dir_structure: list[Path], expected_paths, tmp_path, excluded_patterns):
+    def test_list_files(self, dir_structure: list[Path], expected_paths: set[Path], tmp_path: Path,
+                        excluded_patterns: list[str]) -> None:
         for item in dir_structure:
             item = tmp_path / item
             if item.suffix == '':
