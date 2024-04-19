@@ -169,69 +169,46 @@ class TestAutosummaryCompatibility:
             assert test_file_line in lines
 
 
-@pytest.fixture
-def file_tree(tmp_path):
-    src = tmp_path / "src"
-    src.mkdir()
-    folder1 = src / "folder1"
-    folder1.mkdir()
-    folder2 = src / "folder2"
-    folder2.mkdir()
-
-    subfolder1 = folder1 / "subfolder1"
-    subfolder1.mkdir()
-
-    file1 = folder1 / "file1.txt"
-    file1.write_text("Content of file1")
-
-    file2 = folder2 / "file2.txt"
-    file2.write_text("Content of file2")
-
-    file3 = subfolder1 / "file3.txt"
-    file3.write_text("Content of file3")
-
-    return src
-
-
 class TestMakeSearchPaths:
 
-    def test_folders_before_files(self, file_tree):
-        (file_tree / "file1.txt").touch()
-        (file_tree / "file2.py").touch()
-        files = [
-            Path("file1.txt"),
-            Path("file2.py"),
-            Path("folder1"),
-            Path("folder2"),
-        ]
+    def test_folders_before_files(self, tmp_path, files, expected_folder_file_mask):
+        src = tmp_path / "src"
+        src.mkdir()
+        folder1 = src / "folder1"
+        folder1.mkdir()
+        folder2 = src / "folder2"
+        folder2.mkdir()
 
-        search_paths = _make_search_paths(file_tree, files, index=False)
+        (src / "file1.txt").touch()
+        (src / "file2.py").touch()
+
+        files = [Path(item) for item in ["folder1", "folder2", "file1", "file2"]]
+        search_paths = _make_search_paths(src, files, index=False)
         paths = search_paths.split("\f")
-        # 0 - папки, 1 - файлы
         folder_file_mask = [0 if Path(item).name.startswith("autotoc") else 1 for item in paths]
 
-        assert sorted(folder_file_mask) == folder_file_mask, "Folders should come before files"
+        assert sorted(folder_file_mask) == expected_folder_file_mask, "Folders should come before files"
 
     @pytest.mark.parametrize(
         "root_addition, files, index, expected_file_paths",
         [
-            ("", [Path("file1.txt"), Path("file2.txt"), Path("folder1"), Path("folder2")], False, [
+            ("", [Path(item) for item in ["file1.txt", "file2.txt", "folder1", "folder2"]], False, [
                 "folder1/autotoc.folder1.rst",
                 "folder2/autotoc.folder2.rst",
                 "file1.txt",
                 "file2.txt",
             ]),
-            ("", [Path("file1.txt"), Path("file2.txt"), Path("folder1"), Path("folder2")], True, [
+            ("", [Path(item) for item in ["file1.txt", "file2.txt", "folder1", "folder2"]], True, [
                 "src/folder1/autotoc.folder1.rst",
                 "src/folder2/autotoc.folder2.rst",
                 "src/file1.txt",
                 "src/file2.txt",
             ]),
-            ("folder1", [Path("file3.txt"), Path("subfolder1")], False, [
+            ("folder1", [Path(item) for item in ["file3.txt", "subfolder1"]], False, [
                 "subfolder1/autotoc.subfolder1.rst",
                 "file3.txt",
             ]),
-            ("folder1", [Path("file3.txt"), Path("subfolder1")], True, [
+            ("folder1", [Path(item) for item in ["file3.txt", "subfolder1"]], True, [
                 "src/folder1/subfolder1/autotoc.subfolder1.rst",
                 "src/folder1/file3.txt",
             ]),
@@ -243,7 +220,16 @@ class TestMakeSearchPaths:
             ]),
         ],
     )
-    def test_search_paths_generation(self, root_addition, files, index, expected_file_paths, file_tree):
-        root = file_tree / root_addition
+    def test_search_paths_generation(self, tmp_path, root_addition, files, index, expected_file_paths):
+        root = tmp_path / "src" / root_addition
+        root.mkdir(parents=True, exist_ok=True)
+
+        for item in files:
+            item = root / item
+            if item.suffix == '':
+                item.mkdir(exist_ok=True)
+            else:
+                item.touch(exist_ok=True)
+
         search_paths = _make_search_paths(root, files, index)
         assert search_paths == "\f".join(expected_file_paths)
