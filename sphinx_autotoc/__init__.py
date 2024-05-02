@@ -283,7 +283,7 @@ def _make_search_paths(root: Path, f: list[Path]) -> list[Path]:
     folder_paths = set()
     for file in f:
         if (root / file).is_dir():
-            file /= _get_dir_index(file).name
+            file /= _get_dir_index(file).stem
             folder_paths.add(file)
         else:
             # Если смотрим файл содержания текущей папки
