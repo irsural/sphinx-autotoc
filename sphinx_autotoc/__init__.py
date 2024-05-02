@@ -7,7 +7,7 @@ from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx.errors import ExtensionError
 from sphinx.util import logging
-from sphinx.util.matching import Matcher
+from sphinx.util.matching import patfilter
 
 logger = logging.getLogger(__name__)
 SPHINX_SERVICE_FILE_PREFIX = "autotoc"
@@ -393,24 +393,24 @@ def _list_files(docs_directory: Path, exclude_patterns: list[str]) -> set[Path]:
     :return: Пути к файлам.
     """
     result = set()
-    matcher = Matcher(exclude_patterns)
     for root, _, files in os.walk(docs_directory):
         root_path = Path(root)
         relative_root = root_path.relative_to(docs_directory)
 
-        if matcher.match(root):
+        if any(patfilter([root], pattern) for pattern in exclude_patterns):
             continue
 
-        dir_has_rst_files = False
         for file in files:
             file_path = relative_root / file
-            if not any(matcher.match(file_path_part) for file_path_part in file_path.parts) \
-                    and file_path.suffix == '.rst'\
-                    and not relative_root.name.startswith("_"):
+            if (
+                not any(patfilter([str(file_path)], pattern) for pattern in exclude_patterns)
+                and file_path.suffix == '.rst'
+                and not relative_root.name.startswith('_')
+            ):
                 result.add(file_path)
-                dir_has_rst_files = True
-
-        if dir_has_rst_files:
-            result.add(relative_root)
+                # [:-1] в родителях файла исключает '.'
+                parent_dirs = list(file_path.parents)[:-1]
+                for parent_dir in parent_dirs:
+                    result.add(parent_dir)
 
     return result
