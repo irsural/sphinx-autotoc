@@ -2,6 +2,7 @@ import os
 import pytest
 from textwrap import dedent
 from pathlib import Path
+from shutil import rmtree
 from sphinx_autotoc import make_indexes, trim_leading_numbers, _make_search_paths
 from sphinx.config import Config
 from sphinx.errors import ConfigError
@@ -186,88 +187,60 @@ class TestAutosummaryCompatibility:
             assert test_file_line in lines
 
 
+@pytest.fixture(scope='session')
+def session_tmp_dir(tmp_path_factory):
+    tmp_dir = tmp_path_factory.mktemp('session_tmp_dir')
+    yield tmp_dir
+    rmtree(tmp_dir)
+
+
+@pytest.fixture(scope='session')
+def search_paths_list(session_tmp_dir):
+    root = session_tmp_dir / "src"
+    root.mkdir()
+
+    file_list = [Path(file) for file in [
+        "file1.rst",
+        "file2.rst",
+        "autotoc.src.rst",
+    ]]
+    folder_list = [Path(folder) for folder in [
+        "folder1",
+        "folder2",
+    ]]
+
+    for folder in folder_list:
+        (root / folder).mkdir()
+
+    for file in file_list:
+        (root / file).touch()
+
+    yield _make_search_paths(root, file_list + folder_list)
+
+
 class TestMakeSearchPaths:
-    def test_folders_before_files(self, tmp_path):
-        src = tmp_path / "src"
-        src.mkdir()
-        folder1 = src / "folder1"
-        folder1.mkdir()
-        folder2 = src / "folder2"
-        folder2.mkdir()
 
-        (src / "file1.txt").touch()
-        (src / "file2.py").touch()
+    def test_search_paths_add_files(self, search_paths_list):
+        assert Path("file1.rst") in search_paths_list
+        assert Path("file2.rst") in search_paths_list
 
-        files = [Path(item) for item in ["folder1", "folder2", "file1", "file2"]]
-        search_paths = _make_search_paths(src, files)
+    def test_search_paths_add_folders(self, search_paths_list):
+        assert Path("folder1/autotoc.folder1.rst") in search_paths_list
+        assert Path("folder2/autotoc.folder2.rst") in search_paths_list
 
+
+    def test_search_paths_ignore_autotoc_of_current_folder(self, search_paths_list) -> None:
+        assert Path("autotoc.src.rst") not in search_paths_list
+
+
+    def test_search_paths_folders_before_files(self, search_paths_list):
         assert (
-            search_paths == [
+                search_paths_list == [
             Path(item) for item in [
-                "folder1/autotoc.folder1",
-                "folder2/autotoc.folder2",
-                "file1",
-                "file2"
+                "folder1/autotoc.folder1.rst",
+                "folder2/autotoc.folder2.rst",
+                "file1.rst",
+                "file2.rst"
             ]
         ]
         ), "Папки должны идти в содержании раньше файлов"
-
-    # @pytest.mark.parametrize(
-    #     "root_addition, files, expected_file_paths",
-    #     [
-    #         (
-    #             "",
-    #             [
-    #                 Path(item)
-    #                 for item in ["file1.txt", "file2.txt", "folder1", "folder2"]
-    #             ],
-    #             [
-    #                 Path(item)
-    #                 for item in [
-    #                     "folder1/autotoc.folder1.rst",
-    #                     "folder2/autotoc.folder2.rst",
-    #                     "file1.txt",
-    #                     "file2.txt",
-    #                 ]
-    #             ],
-    #         ),
-    #         (
-    #             "folder1",
-    #             [Path(item) for item in ["file3.txt", "subfolder1"]],
-    #             [
-    #                 Path(item)
-    #                 for item in [
-    #                     "subfolder1/autotoc.subfolder1.rst",
-    #                     "file3.txt",
-    #                 ]
-    #             ],
-    #         ),
-    #         (
-    #             "folder2",
-    #             [Path("file2.txt")],
-    #             [Path("file2.txt")],
-    #         ),
-    #     ],
-    # )
-    # def test_search_paths_generation(
-    #     self, tmp_path, root_addition, files, expected_file_paths
-    # ):
-    #     root = tmp_path / "src" / root_addition
-    #     root.mkdir(parents=True, exist_ok=True)
-    #
-    #     for item in files:
-    #         item = root / item
-    #         if item.suffix == "":
-    #             item.mkdir(exist_ok=True)
-    #         else:
-    #             item.touch(exist_ok=True)
-    #
-    #     search_paths = _make_search_paths(root, files)
-    #     assert search_paths == expected_file_paths
-
-    # TODO: переделать тест на несколько тестов под разный функционал
-    #   * У всех папок добавлен префикс autotoc
-    #   * Папки раньше файлов в списке
-    #   * Файл содержания текущей папки не добавляется
-    #   * и т. д.
-    #   Это все должны быть разные тесты, возможно, с parametrize, если это удобно
