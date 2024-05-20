@@ -224,8 +224,13 @@ class TestMakeSearchPaths:
         )
         assert search_paths == [Path("folder1/autotoc.folder1.rst")]
 
-    def test_search_paths_ignore_autotoc_of_current_folder(self, search_paths_list) -> None:
-        assert Path("autotoc.src.rst") not in search_paths_list
+    def test_search_paths_natsorted_order(self, tmp_path) -> None:
+        search_paths = prepare_search_paths(
+            tmp_path,
+            ["100file.rst", "50file.rst", "200file.rst"],
+            []
+        )
+        assert search_paths == [Path("50file.rst"), Path("100file.rst"), Path("200file.rst"), ]
 
     def test_search_paths_folders_before_files(self, tmp_path):
         search_paths = prepare_search_paths(
