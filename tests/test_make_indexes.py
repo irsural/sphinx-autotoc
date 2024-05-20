@@ -187,28 +187,6 @@ class TestAutosummaryCompatibility:
             assert test_file_line in lines
 
 
-@pytest.fixture(scope='session')
-def session_tmp_dir(tmp_path_factory):
-    tmp_dir = tmp_path_factory.mktemp('session_tmp_dir')
-    yield tmp_dir
-    rmtree(tmp_dir)
-
-
-@pytest.fixture(scope='session')
-def search_paths_list(session_tmp_dir):
-    root = session_tmp_dir / "src"
-    root.mkdir()
-
-    file_list = [Path(file) for file in [
-        "file1.rst",
-        "file2.rst",
-        "autotoc.src.rst",
-    ]]
-    folder_list = [Path(folder) for folder in [
-        "folder1",
-        "folder2",
-    ]]
-
     for folder in folder_list:
         (root / folder).mkdir()
 
