@@ -187,38 +187,55 @@ class TestAutosummaryCompatibility:
             assert test_file_line in lines
 
 
+def prepare_search_paths(root: Path, file_list: list[str], folder_list: list[str]) -> list[Path]:
     for folder in folder_list:
         (root / folder).mkdir()
 
     for file in file_list:
         (root / file).touch()
 
-    yield _make_search_paths(root, file_list + folder_list)
+    full_list = [Path(item) for item in file_list + folder_list]
+    return _make_search_paths(root, full_list)
 
 
 class TestMakeSearchPaths:
 
-    def test_search_paths_add_files(self, search_paths_list):
-        assert Path("file1.rst") in search_paths_list
-        assert Path("file2.rst") in search_paths_list
+    def test_search_paths_add_files(self, tmp_path):
+        search_paths = prepare_search_paths(
+            tmp_path,
+                ["file.rst"],
+            []
+        )
+        assert search_paths == [Path("file.rst")]
 
-    def test_search_paths_add_folders(self, search_paths_list):
-        assert Path("folder1/autotoc.folder1.rst") in search_paths_list
-        assert Path("folder2/autotoc.folder2.rst") in search_paths_list
+    def test_search_paths_ignore_autotoc_of_current_folder(self, tmp_path) -> None:
+        search_paths = prepare_search_paths(
+            tmp_path,
+            [f"autotoc.{tmp_path.name}.rst"],
+            []
+        )
+        assert Path(f"autotoc.{tmp_path.name}.rst") not in search_paths
 
+    def test_search_paths_add_folders(self, tmp_path):
+        search_paths = prepare_search_paths(
+            tmp_path,
+            [],
+            ["folder1"]
+        )
+        assert search_paths == [Path("folder1/autotoc.folder1.rst")]
 
     def test_search_paths_ignore_autotoc_of_current_folder(self, search_paths_list) -> None:
         assert Path("autotoc.src.rst") not in search_paths_list
 
-
-    def test_search_paths_folders_before_files(self, search_paths_list):
-        assert (
-                search_paths_list == [
-            Path(item) for item in [
-                "folder1/autotoc.folder1.rst",
-                "folder2/autotoc.folder2.rst",
-                "file1.rst",
-                "file2.rst"
-            ]
-        ]
-        ), "Папки должны идти в содержании раньше файлов"
+    def test_search_paths_folders_before_files(self, tmp_path):
+        search_paths = prepare_search_paths(
+            tmp_path,
+            ["file1.rst", "file2.rst",],
+            ["folder1", "folder2"]
+        )
+        assert search_paths == [ Path(item) for item in [
+            "folder1/autotoc.folder1.rst",
+            "folder2/autotoc.folder2.rst",
+            "file1.rst",
+            "file2.rst"
+        ]], "Папки должны идти в содержании раньше файлов"
