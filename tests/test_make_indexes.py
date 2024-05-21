@@ -174,10 +174,10 @@ class TestAutosummaryCompatibility:
             assert test_file_line in lines
 
 
-def setup_list_files_dir(tmp_path: Path, deepest_folder: list[str], files: list[str]) -> None:
+def setup_list_files_dir(tmp_path: Path, folders: list[str], files: list[str]) -> None:
     root = tmp_path / 'src'
     root.mkdir()
-    for folder in deepest_folder:
+    for folder in folders:
         (root / folder).mkdir(parents=True)
     for file in files:
         (root / file).touch()
