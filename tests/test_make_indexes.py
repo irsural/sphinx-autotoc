@@ -195,50 +195,59 @@ def prepare_search_paths(root: Path, file_list: list[str], folder_list: list[str
         (root / file).touch()
 
     full_list = [Path(item) for item in file_list + folder_list]
-    return _make_search_paths(root, full_list)
+    return full_list
 
 
 class TestMakeSearchPaths:
 
     def test_search_paths_add_files(self, tmp_path):
-        search_paths = prepare_search_paths(
+        full_file_list = prepare_search_paths(
             tmp_path,
                 ["file.rst"],
             []
         )
+        search_paths = _make_search_paths(tmp_path, full_file_list)
         assert search_paths == [Path("file.rst")]
 
     def test_search_paths_ignore_autotoc_of_current_folder(self, tmp_path) -> None:
-        search_paths = prepare_search_paths(
+        full_file_list = prepare_search_paths(
             tmp_path,
             [f"autotoc.{tmp_path.name}.rst"],
             []
         )
+
+        search_paths = _make_search_paths(tmp_path, full_file_list)
         assert Path(f"autotoc.{tmp_path.name}.rst") not in search_paths
 
     def test_search_paths_add_folders(self, tmp_path):
-        search_paths = prepare_search_paths(
+        full_file_list = prepare_search_paths(
             tmp_path,
             [],
             ["folder1"]
         )
+
+        search_paths = _make_search_paths(tmp_path, full_file_list)
         assert search_paths == [Path("folder1/autotoc.folder1.rst")]
 
     def test_search_paths_natsorted_order(self, tmp_path) -> None:
-        search_paths = prepare_search_paths(
+        full_file_list = prepare_search_paths(
             tmp_path,
             ["100file.rst", "50file.rst", "200file.rst"],
             []
         )
+
+        search_paths = _make_search_paths(tmp_path, full_file_list)
         assert search_paths == [Path("50file.rst"), Path("100file.rst"), Path("200file.rst"), ]
 
     def test_search_paths_folders_before_files(self, tmp_path):
-        search_paths = prepare_search_paths(
+        full_file_list = prepare_search_paths(
             tmp_path,
             ["file1.rst", "file2.rst",],
             ["folder1", "folder2"]
         )
-        assert search_paths == [ Path(item) for item in [
+
+        search_paths = _make_search_paths(tmp_path, full_file_list)
+        assert search_paths == [Path(item) for item in [
             "folder1/autotoc.folder1.rst",
             "folder2/autotoc.folder2.rst",
             "file1.rst",
