@@ -3,7 +3,6 @@ from pathlib import Path
 from textwrap import dedent
 
 import pytest
-from shutil import rmtree
 from sphinx.config import Config
 from sphinx.errors import ConfigError
 
@@ -175,78 +174,79 @@ class TestAutosummaryCompatibility:
             assert test_file_line in lines
 
 
-@pytest.fixture()
-def list_files_dir(tmp_path) -> set[Path]:
-    root = tmp_path / "src"
-    (root / "folder1" / "folder2").mkdir(parents=True)
-    (root / "folder1" / "hidden_folder3").mkdir()
-    for file in [
-        "folder1/1.1.rst",
-        "folder1/hidden_file.rst",
-        "folder1/folder2/also_hidden_file.rst",
-        "folder1/folder2/3.rst",
-        "folder1/hidden_folder3/3.4.rst"
-    ]:
+def setup_list_files_dir(tmp_path: Path, deepest_folder: list[str], files: list[str]) -> None:
+    root = tmp_path / 'src'
+    root.mkdir()
+    for folder in deepest_folder:
+        (root / folder).mkdir(parents=True)
+    for file in files:
         (root / file).touch()
-    var = _list_files(tmp_path, ["**hidden**"])
-    return var
+
 
 class TestListFiles:
+    def test_list_files_ok(self, tmp_path: Path) -> None:
+        setup_list_files_dir(
+            tmp_path,
+            ['folder1/folder11', 'folder1/folder12'],
+            [
+                'folder1/1.rst',
+                'folder1/folder11/11.rst',
+                'folder1/folder12/12.rst',
+            ],
+        )
+        set = _list_files(tmp_path, [])
+        expected = {
+            Path(item)
+            for item in [
+                'src',
+                'src/folder1',
+                'src/folder1/1.rst',
+                'src/folder1/folder11',
+                'src/folder1/folder11/11.rst',
+                'src/folder1/folder12',
+                'src/folder1/folder12/12.rst',
+            ]
+        }
+        assert set == expected
 
-    def test_list_files_abobus(self, list_files_dir):
-        assert list_files_dir == ()
-#     @pytest.mark.parametrize(["dir_structure", "expected_paths", "excluded_patterns"], [
-#         (["root_file.rst",
-#           "dir1/file1.rst",
-#           "dir2/file3.rst"], {Path(item) for item in [
-#                               ".",
-#                               "root_file.rst",
-#                               "dir1",
-#                               "dir1/file1.rst",
-#                               "dir2",
-#                               "dir2/file3.rst"]}, []),
-#         (["dir1/file1.rst",
-#           "empty_directory"], {Path(item) for item in [
-#                                "dir1",
-#                                "dir1/file1.rst"]}, ""),
-#         (["dir1/file1.rst",
-#           "_dir2/file2.rst",
-#           "dir1/_hidden_subdir/subfile.rst"], {Path(item) for item in [
-#                                                "dir1/file1.rst",
-#                                                "dir1"]}, []),
-#         (["_root_file.rst",
-#           "dir1/file1.rst",
-#           "dir2/_file2.rst"], {Path(item) for item in [
-#                                ".",
-#                                "_root_file.rst",
-#                                "dir1",
-#                                "dir1/file1.rst",
-#                                "dir2",
-#                                "dir2/_file2.rst",]}, []),
-#         (["shown_folder/visible_file.rst",
-#           "hidden_folder/file.rst",
-#           "mixed_folder/hidden_file.rst",
-#           "mixed_folder/visible_file.rst"], {Path(item) for item in [
-#                                              "mixed_folder",
-#                                              "shown_folder",
-#                                              "shown_folder/visible_file.rst",
-#                                              "mixed_folder/visible_file.rst"]}, ["*hidden*"]),
-#         (["rst/rst-file.rst",
-#           "txt/txt-file.txt"], {Path(item) for item in [
-#                                 "rst",
-#                                 "rst/rst-file.rst"]}, [])
-#     ])
-#     def test_list_files(self, dir_structure: list[Path], expected_paths: set[Path], tmp_path: Path,
-#                         excluded_patterns: list[str]) -> None:
-#         for item in dir_structure:
-#             item = tmp_path / item
-#             if item.suffix == '':
-#                 item.mkdir(parents=True, exist_ok=True)
-#             else:
-#                 item.parent.mkdir(parents=True, exist_ok=True)
-#                 item.touch()
-#
-#         result = _list_files(tmp_path, excluded_patterns)
-#         assert result == expected_paths
+    def test_list_files_empty_directory(self, tmp_path: Path) -> None:
+        setup_list_files_dir(tmp_path, ['folder1/folder12'], ['folder1/1.rst'])
+        set = _list_files(tmp_path, [])
+        assert Path('src/folder1/folder12') not in set
 
-# TODO: Переделать тесты на "конкретные пути выполнения функции"
+    def test_list_files_empty_directory_with_rst_in_subdirectory(self, tmp_path: Path) -> None:
+        setup_list_files_dir(tmp_path, ['folder1/folder12'], ['folder1/folder12/12.rst'])
+        set = _list_files(tmp_path, [])
+        assert Path('src/folder1') in set
+
+    def test_list_files_non_rst_files(self, tmp_path: Path) -> None:
+        setup_list_files_dir(tmp_path, [], ['1.txt', '2.py'])
+        assert _list_files(tmp_path, []) == set()
+
+    def test_list_files_mixed_files(self, tmp_path: Path) -> None:
+        setup_list_files_dir(
+            tmp_path, ['folder1'], ['folder1/1.rst', 'folder1/2.py', 'folder1/3.txt']
+        )
+        expected = {Path(item) for item in ['src', 'src/folder1/1.rst', 'src/folder1']}
+        assert _list_files(tmp_path, []) == expected
+
+    def test_list_files_underscored_subdirs(self, tmp_path: Path) -> None:
+        setup_list_files_dir(tmp_path, ['folder1', '_folder2'], ['folder1/1.rst', '_folder2/2.rst'])
+        expected = {Path(item) for item in ['src', 'src/folder1', 'src/folder1/1.rst']}
+        assert _list_files(tmp_path, []) == expected
+
+    def test_list_files_exclude_patterns_files(self, tmp_path: Path) -> None:
+        setup_list_files_dir(tmp_path, [], ['1.rst', '2.rst', 'excluded_file.rst'])
+        exclude_patterns = ['**/excluded_file.rst']
+        expected = {Path(item) for item in ['src', 'src/1.rst', 'src/2.rst']}
+        assert _list_files(tmp_path, exclude_patterns) == expected
+
+    def test_list_files_exclude_patterns_dirs(self, tmp_path: Path) -> None:
+        setup_list_files_dir(
+            tmp_path,
+            ['folder1', 'excluded_dir'],
+            ['folder1/1.rst', 'excluded_dir/2.rst', 'excluded_file.rst'],
+        )
+        exclude_patterns = ['**excluded_file.rst', '**excluded_dir**']
+        expected = {Path(item) for item in ['src', 'src/folder1', 'src/folder1/1.rst']}
+        assert _list_files(tmp_path, exclude_patterns) == expected
