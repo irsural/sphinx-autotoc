@@ -6,6 +6,7 @@ from typing import Iterator
 from natsort import natsorted
 from sphinx.application import Sphinx
 from sphinx.config import Config
+from sphinx.errors import ExtensionError
 from sphinx.util import logging
 
 logger = logging.getLogger(__name__)
@@ -60,15 +61,9 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
     header_text = cfg["sphinx_autotoc_header"]
     trim_folder_numbers = cfg["sphinx_autotoc_trim_folder_numbers"]
     src_path = docs_directory / "src"
-    if not src_path.exists() or not any(src_path.iterdir()):
-        logger.error("Папка 'src' не существует или пуста.")
-        return
-    autosummary_flag = False
-    autosummary_dict = defaultdict(tuple)
-
-    if "sphinx.ext.autosummary" in cfg.extensions and cfg.autosummary_generate:
-        logger.info("autosummary found!")
-        autosummary_flag = True
+    _check_folder_existence(src_path)
+    autosummary_flag = _check_autosummary_flag(cfg)
+    autosummary_dict: dict[Path, tuple[str, str]] = {}
 
     main_page_dirs: dict[Path, list[Path]] = {}  # toctree header: toctree links
 
@@ -76,23 +71,14 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
         main_page_dirs = {src_path: []}
 
     for current_dir, current_dir_files in _iter_dirs(docs_directory, cfg):
-        if autosummary_flag:
-            for file in current_dir_files:
-                if file.name == "autotoc.autosummary.rst":
-                    autosummary_dict[current_dir / file] = _parse_autosummary(current_dir / file)
-        if current_dir.name == "_autosummary":
-            continue
-        if current_dir != src_path:
-            _add_to_nav(current_dir, current_dir_files, trim_folder_numbers)
-
-        if get_headers_from_subfolder:
-            if current_dir.parent == src_path:
-                main_page_dirs.update({current_dir: current_dir_files})
-        else:
-            if current_dir == src_path:
-                main_page_dirs[src_path].extend(current_dir_files)
-            elif current_dir.parent == src_path:
-                main_page_dirs[src_path].append(Path(current_dir.name))
+        _process_dir_and_files(src_path,
+                               current_dir,
+                               current_dir_files,
+                               autosummary_flag,
+                               autosummary_dict,
+                               get_headers_from_subfolder,
+                               main_page_dirs,
+                               trim_folder_numbers)
 
     main_page = _add_to_main_page(main_page_dirs,
                                   main_page,
@@ -104,7 +90,65 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
         f.write(main_page.format(project=cfg.project, dop="=" * len(cfg.project)))
 
     if autosummary_flag:
-        _replace_autosummary(autosummary_dict, docs_directory, index)  # type: ignore[arg-type]
+        _replace_autosummary(autosummary_dict, docs_directory, index)
+
+
+def _check_autosummary_flag(cfg: Config) -> bool:
+    if "sphinx.ext.autosummary" in cfg.extensions and cfg.autosummary_generate:
+        logger.info("autosummary found!")
+        return True
+    return False
+
+
+def _process_dir_and_files(
+        src_path: Path,
+        current_dir: Path,
+        current_dir_files: list[Path],
+        autosummary_flag: bool,
+        autosummary_dict: dict[Path, tuple[str, str]],
+        get_headers_from_subfolder: bool,
+        main_page_dirs: dict[Path, list[Path]],
+        trim_folder_numbers: bool) -> None:
+
+    if autosummary_flag:
+        for file in current_dir_files:
+            if file.name == "autotoc.autosummary.rst":
+                autosummary_info = _parse_autosummary(current_dir / file)
+                if autosummary_info:
+                    autosummary_dict[current_dir / file] = autosummary_info
+
+    if current_dir.name == "_autosummary":
+        return
+
+    if current_dir != src_path:
+        _add_to_nav(current_dir, current_dir_files, trim_folder_numbers)
+
+    _update_main_page_dirs(main_page_dirs,
+                           get_headers_from_subfolder,
+                           current_dir,
+                           src_path,
+                           current_dir_files)
+
+
+def _update_main_page_dirs(main_page_dirs: dict[Path, list[Path]],
+                           get_headers_from_subfolder: bool,
+                           current_dir: Path,
+                           src_path: Path,
+                           current_dir_files: list[Path]):
+    if get_headers_from_subfolder:
+        if current_dir.parent == src_path:
+            main_page_dirs.update({current_dir: current_dir_files})
+    else:
+        if current_dir == src_path:
+            main_page_dirs[src_path].extend(current_dir_files)
+        elif current_dir.parent == src_path:
+            main_page_dirs[src_path].append(Path(current_dir.name))
+
+
+def _check_folder_existence(folder: Path) -> None:
+    if not folder.exists() or not any(folder.iterdir()):
+        errormsg = f"Папка {folder} не существует или пуста."
+        raise ExtensionError(errormsg)
 
 
 def _replace_autosummary(autosummary_dict: dict[Path, tuple[str, str]],
@@ -120,7 +164,7 @@ def _replace_autosummary(autosummary_dict: dict[Path, tuple[str, str]],
     for file_path, (file_header, module_name) in autosummary_dict.items():
         if any((file_header, module_name, file_path)) is None:
             continue
-        logger.info(f"module_name: {module_name}, file_path: {file_path}")
+        logger.debug("module name: %s, file path:%s", module_name, file_path)
         logger.info("Working on autosummary reference...")
         autosummary_index = _get_dir_index(file_path.parent)
         if autosummary_index.parent == docs_directory:
@@ -154,7 +198,7 @@ def _replace_autosummary_with_api_reference(index: Path, file_path: Path,
         f.truncate()
 
 
-def _parse_autosummary(file: Path) -> tuple[str, str] | tuple[None, None]:
+def _parse_autosummary(file: Path) -> tuple[str, str] | None:
     """
     Парсит файл с директивой autosummary.
 
@@ -170,7 +214,7 @@ def _parse_autosummary(file: Path) -> tuple[str, str] | tuple[None, None]:
             next_line = lines[j].strip()
             if len(next_line) > 1 and not next_line.startswith(':'):
                 return lines[0].strip(), next_line
-    return None, None
+    return None
 
 
 def _add_to_main_page(
@@ -348,11 +392,9 @@ def _flatmap(docs_directory: Path, cfg: Config) -> dict[Path, set[Path]]:
     """
     roots: dict[Path, set[Path]] = defaultdict(set)
     for file in _list_files(docs_directory):
-        if file.parent.name:
-            if file.suffix in cfg.source_suffix.keys():
-                roots[docs_directory / file.parent].add(Path(file.name))
-            elif (docs_directory / file).is_dir():
-                roots[docs_directory / file.parent].add(Path(file.name))
+        if (file.parent.name and
+                (file.suffix in cfg.source_suffix or (docs_directory / file).is_dir())):
+            roots[docs_directory / file.parent].add(Path(file.name))
     return roots
 
 
@@ -366,7 +408,8 @@ def _list_files(docs_directory: Path) -> set[Path]:
     result = set()
 
     def _should_ignore(p: Path) -> bool:
-        return any(part in IGNORE_LIST for part in p.parts) or any(part.startswith("_") for part in p.parts)
+        return (any(part in IGNORE_LIST for part in p.parts)
+                or any(part.startswith("_") for part in p.parts))
 
     for root, dirs, files in os.walk(docs_directory):
         if _should_ignore(Path(root)):

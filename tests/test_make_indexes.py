@@ -1,18 +1,19 @@
 import os
-import pytest
-from textwrap import dedent
 from pathlib import Path
-from shutil import rmtree
-from sphinx_autotoc import make_indexes, trim_leading_numbers, _make_search_paths
+from textwrap import dedent
+
+import pytest
 from sphinx.config import Config
 from sphinx.errors import ConfigError
+
+from sphinx_autotoc import _make_search_paths, make_indexes, trim_leading_numbers
 
 MAKE_INDEXES_TEST_PROJECTS_DIR = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "make_indexes_test_projects"
 )
 
 
-def activate_cfg(path: Path):
+def activate_cfg(path: Path) -> Config:
     cfg = Config.read(path)
     cfg.pre_init_values()
     cfg.init_values()
@@ -64,7 +65,7 @@ class TestMakeIndexesFlags:
             .. toctree::
                :maxdepth: 2
                :caption: Содержание
-            
+
                src/1. level1/autotoc.1. level1.rst
             """)
 
@@ -82,7 +83,7 @@ class TestMakeIndexesFlags:
             .. toctree::
                :maxdepth: 2
                :caption: 1. level1
-            
+
                src/1. level1/2. level2/autotoc.2. level2.rst
                src/1. level1/l1.rst
                src/1. level1/l1.1.rst
@@ -100,11 +101,11 @@ class TestMakeIndexesFlags:
             assert f.read() == dedent("""
             level1
             ==========
-            
-            
+
+
             .. toctree::
                :maxdepth: 2
-            
+
                2. level2/autotoc.2. level2.rst
                l1.rst
                l1.1.rst
@@ -125,7 +126,7 @@ class TestMakeIndexesFlags:
             .. toctree::
                :maxdepth: 2
                :caption: level1
-            
+
                src/1. level1/2. level2/autotoc.2. level2.rst
                src/1. level1/l1.rst
                src/1. level1/l1.1.rst
@@ -144,7 +145,7 @@ class TestMakeIndexesFlags:
             .. toctree::
                :maxdepth: 2
                :caption: custom header
-            
+
                src/1. level1/autotoc.1. level1.rst
                """)
 
@@ -200,7 +201,7 @@ def prepare_search_paths(root: Path, file_list: list[str], folder_list: list[str
 
 class TestMakeSearchPaths:
 
-    def test_search_paths_add_files(self, tmp_path):
+    def test_search_paths_add_files(self, tmp_path: Path):
         full_file_list = prepare_search_paths(
             tmp_path,
                 ["file.rst"],
@@ -209,7 +210,7 @@ class TestMakeSearchPaths:
         search_paths = _make_search_paths(tmp_path, full_file_list)
         assert search_paths == [Path("file.rst")]
 
-    def test_search_paths_ignore_autotoc_of_current_folder(self, tmp_path) -> None:
+    def test_search_paths_ignore_autotoc_of_current_folder(self, tmp_path: Path) -> None:
         full_file_list = prepare_search_paths(
             tmp_path,
             [f"autotoc.{tmp_path.name}.rst"],
@@ -219,7 +220,7 @@ class TestMakeSearchPaths:
         search_paths = _make_search_paths(tmp_path, full_file_list)
         assert Path(f"autotoc.{tmp_path.name}.rst") not in search_paths
 
-    def test_search_paths_add_folders(self, tmp_path):
+    def test_search_paths_add_folders(self, tmp_path: Path):
         full_file_list = prepare_search_paths(
             tmp_path,
             [],
@@ -229,7 +230,7 @@ class TestMakeSearchPaths:
         search_paths = _make_search_paths(tmp_path, full_file_list)
         assert search_paths == [Path("folder1/autotoc.folder1.rst")]
 
-    def test_search_paths_natsorted_order(self, tmp_path) -> None:
+    def test_search_paths_natsorted_order(self, tmp_path: Path) -> None:
         full_file_list = prepare_search_paths(
             tmp_path,
             ["100file.rst", "50file.rst", "200file.rst"],
@@ -239,7 +240,7 @@ class TestMakeSearchPaths:
         search_paths = _make_search_paths(tmp_path, full_file_list)
         assert search_paths == [Path("50file.rst"), Path("100file.rst"), Path("200file.rst"), ]
 
-    def test_search_paths_folders_before_files(self, tmp_path):
+    def test_search_paths_folders_before_files(self, tmp_path: Path):
         full_file_list = prepare_search_paths(
             tmp_path,
             ["file1.rst", "file2.rst",],
