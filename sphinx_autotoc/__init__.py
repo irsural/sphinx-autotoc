@@ -403,14 +403,14 @@ def _list_files(docs_directory: Path, exclude_patterns: list[str]) -> set[Path]:
 
         for file in files:
             file_path = relative_root / file
-            if (
-                not matcher(str(file_path)) and file_path.suffix == '.rst'
-                and not relative_root.name.startswith('_')
-            ):
-                result.add(file_path)
-                # [:-1] в родителях файла исключает '.'
-                parent_dirs = list(file_path.parents)[:-1]
-                for parent_dir in parent_dirs:
-                    result.add(parent_dir)
+
+            if any([matcher(root), file_path.suffix != '.rst', relative_root.name.startswith('_')]):
+                continue
+
+            result.add(file_path)
+            # [:-1] в родителях файла исключает '.'
+            parent_dirs = list(file_path.parents)[:-1]
+            for parent_dir in parent_dirs:
+                result.add(parent_dir)
 
     return result
