@@ -235,18 +235,68 @@ class TestListFiles:
         expected = {Path(item) for item in ['src', 'src/folder1', 'src/folder1/1.rst']}
         assert _list_files(tmp_path, []) == expected
 
-    def test_list_files_exclude_patterns_files(self, tmp_path: Path) -> None:
-        setup_list_files_dir(tmp_path, [], ['1.rst', '2.rst', 'excluded_file.rst'])
-        exclude_patterns = ['**/excluded_file.rst']
-        expected = {Path(item) for item in ['src', 'src/1.rst', 'src/2.rst']}
-        assert _list_files(tmp_path, exclude_patterns) == expected
-
-    def test_list_files_exclude_patterns_dirs(self, tmp_path: Path) -> None:
-        setup_list_files_dir(
-            tmp_path,
-            ['folder1', 'excluded_dir'],
-            ['folder1/1.rst', 'excluded_dir/2.rst', 'excluded_file.rst'],
-        )
-        exclude_patterns = ['**excluded_file.rst', '**excluded_dir**']
-        expected = {Path(item) for item in ['src', 'src/folder1', 'src/folder1/1.rst']}
-        assert _list_files(tmp_path, exclude_patterns) == expected
+    @pytest.mark.parametrize(
+        'folders, files, exclude_patterns, expected',
+        [
+            (
+                # в корневой папке
+                [],
+                ['1.rst', '2.rst', 'excluded_file.rst'],
+                ['**excluded_file.rst'],
+                {'', '1.rst', '2.rst'},
+            ),
+            (
+                # файл в подпапке, но не в корне
+                ['a'],
+                ['excluded_file.rst', 'a/1.rst', 'a/2.rst', 'a/excluded_file.rst'],
+                ['**a/excluded_file.rst'],
+                {'', 'a', 'a/1.rst', 'a/2.rst', 'excluded_file.rst'},
+            ),
+            (
+                # файл и в подпапке, и в корне
+                ['b'],
+                ['excluded_file.rst', 'b/1.rst', 'b/2.rst', 'b/excluded_file.rst'],
+                ['**excluded_file.rst'],
+                {'', 'b', 'b/1.rst', 'b/2.rst'},
+            ),
+            (
+                # файл в корне, но не в подпапке
+                ['c'],
+                ['1.rst', 'excluded_file.rst', 'c/2.rst', 'c/excluded_file.rst'],
+                ['*/excluded_file.rst'],
+                {'', '1.rst', 'c', 'c/2.rst', 'c/excluded_file.rst'},
+            ),
+            (
+                # все файлы с одинаковым началом/концом
+                [],
+                ['bad_file.rst', 'bad_table.rst', 'bad_images.rst', 'good_file.rst'],
+                ['**bad*'],
+                {'', 'good_file.rst'},
+            ),
+            (
+                # все файлы c 1-значным номером
+                [],
+                ['good_1.rst', 'good_2.rst', 'good_11.rst'],
+                ['**good_?.rst'],
+                {'', 'good_11.rst'},
+            ),
+            (
+                # папки
+                ['d1', 'd2', 'excluded_folder'],
+                ['d1/1.rst', 'd2/2.rst', 'excluded_folder/other.rst'],
+                ['**excluded_folder**'],
+                {'', 'd1', 'd1/1.rst', 'd2', 'd2/2.rst'}
+            )
+        ],
+    )
+    def test_list_files_exclude_patterns_files(
+        self,
+        tmp_path: Path,
+        folders: list[str],
+        files: list[str],
+        exclude_patterns: list[str],
+        expected: list[str],
+    ) -> None:
+        setup_list_files_dir(tmp_path, folders, files)
+        expected_paths = {Path('src', item) for item in expected}
+        assert _list_files(tmp_path, exclude_patterns) == expected_paths
