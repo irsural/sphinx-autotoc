@@ -3,6 +3,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Iterator
 
+from natsort import natsorted
 from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx.errors import ExtensionError
@@ -232,12 +233,19 @@ def _add_to_main_page(
     :return main_page: Изменённое содержимое индексной страницы.
     """
     for path, docs in dirs.items():
-        search_paths = _make_search_paths(path, docs, True)
+        search_paths = _make_search_paths(path, docs)
         dirname = trim_leading_numbers(path.name) if trim_folder_numbers else path.name
+        str_search_paths: list[str] = []
+        if get_headers_from_subfolder:
+            for item in search_paths:
+                str_search_paths.append(f"src/{path.name}/{item}")
+        else:
+            for item in search_paths:
+                str_search_paths.append(f"{path.name}/{item}")
         main_page += TOCTREE.format(
             group_name=dirname if get_headers_from_subfolder else header_text,
-            group_dirs=search_paths
-        ).replace("\f", "\n   ")
+            group_dirs="\n   ".join(str_search_paths),
+        )
     return main_page
 
 
@@ -260,14 +268,14 @@ def _add_to_nav(path: Path, docs: list[Path], trim_folder_numbers: bool) -> None
 
     index_path = _get_dir_index(path)
     dirname = trim_leading_numbers(path.name) if trim_folder_numbers else path.name
-    search_paths = _make_search_paths(path, docs, False)
+    search_paths = _make_search_paths(path, docs)
     with open(index_path.as_posix(), "w", encoding="utf-8") as f:
         f.write(
             NAV_PATTERN.format(
                 dirname=dirname,
-                search_paths=search_paths,
+                search_paths="\n   ".join(map(str, search_paths)),
                 includes=content,
-            ).replace("\f", "\n   ")
+            )
         )
 
 
@@ -300,34 +308,40 @@ def _get_dir_index(path: Path) -> Path:
     return path / f"{SPHINX_SERVICE_FILE_PREFIX}.{path.name}.rst"
 
 
-def _make_search_paths(root: Path, f: list[Path], index: bool) -> str:
+def _make_search_paths(root: Path, f: list[Path]) -> list[Path]:
     """
     Создает пути к содержимому в папке.
 
     Если содержимое - файл, добавляется путь к файлу (root/file.txt)
-    Если содержимое - папка, добавляется путь к сервисному файлу этой папки (root/service.dir.rst)
+
+    Если содержимое - папка, добавляется путь к файлу содержания этой папки (root/dir/autotoc.dir.rst)
+
+    Итоговый список содержит пути к папкам и файлам, отсортированные по типу: сначала идут
+    папки, отсортированные по алфавиту, затем - файлы, также отсортированные по алфавиту.
 
     :param root: Корневая папка.
     :param f: Список содержимого корневой папки.
-    :param index: Добавлять ли в путь к файлу корневую папку.
-    :return: Строка путей, разделённая символом \f.
+    :return: Список путей к содержимому в папке.
     """
-    search_paths = []
+    file_paths = set()
+    folder_paths = set()
     for file in f:
-        p = ("src" if root.parent.name == "src" else "") / Path(root.name) if index else Path("")
         if (root / file).is_dir():
-            p /= file / _get_dir_index(file).name
+            file /= _get_dir_index(file).name
+            folder_paths.add(file)
         else:
-            p /= file
+            # Если смотрим файл содержания текущей папки
+            if file.stem == f"{SPHINX_SERVICE_FILE_PREFIX}.{root.name}":
+                continue
 
-        # Если смотрим файл содержания текущей папки
-        if p.stem.split(".", maxsplit=1) == [SPHINX_SERVICE_FILE_PREFIX, root.name]:
-            continue
+            file_paths.add(file)
 
-        if p.as_posix() not in search_paths:
-            search_paths.append(p.as_posix())
-    search_paths.sort(key=lambda x: Path(x).stem.replace(f"{SPHINX_SERVICE_FILE_PREFIX}.", ""))
-    return "\f".join(search_paths)
+    file_paths_list = natsorted(file_paths, key=lambda x: Path(x).stem)
+    folder_paths_list = natsorted(
+        folder_paths,
+        key=lambda x: Path(x).stem.replace(f"{SPHINX_SERVICE_FILE_PREFIX}.", ""),
+    )
+    return folder_paths_list + file_paths_list
 
 
 def _iter_dirs(docs_directory: Path, cfg: Config) -> Iterator[tuple[Path, list[Path]]]:
@@ -339,9 +353,9 @@ def _iter_dirs(docs_directory: Path, cfg: Config) -> Iterator[tuple[Path, list[P
     :return: Кортеж из пути до папки и отсортированного содержимого этой папки.
     """
     mp = _flatmap(docs_directory, cfg)
-    skeys = sorted(mp.keys())
+    skeys = natsorted(mp.keys())
     for root in skeys:
-        sub = sorted(mp[root])
+        sub = natsorted(mp[root])
         yield root, sub
 
 
