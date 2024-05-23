@@ -239,54 +239,68 @@ class TestListFiles:
         'folders, files, exclude_patterns, expected',
         [
             (
-                # в корневой папке
-                [],
-                ['1.rst', '2.rst', 'excluded_file.rst'],
-                ['**excluded_file.rst'],
-                {'', '1.rst', '2.rst'},
+                pytest.param(
+                    [],
+                    ['1.rst', '2.rst', 'excluded_file.rst'],
+                    ['**excluded_file.rst'],
+                    {'', '1.rst', '2.rst'},
+                    id='root folder',
+                )
             ),
             (
-                # файл в подпапке, но не в корне
-                ['a'],
-                ['excluded_file.rst', 'a/1.rst', 'a/2.rst', 'a/excluded_file.rst'],
-                ['**a/excluded_file.rst'],
-                {'', 'a', 'a/1.rst', 'a/2.rst', 'excluded_file.rst'},
+                pytest.param(
+                    ['a'],
+                    ['excluded_file.rst', 'a/1.rst', 'a/2.rst', 'a/excluded_file.rst'],
+                    ['**a/excluded_file.rst'],
+                    {'', 'a', 'a/1.rst', 'a/2.rst', 'excluded_file.rst'},
+                    id='file in subdir, not in root',
+                )
             ),
             (
-                # файл и в подпапке, и в корне
-                ['b'],
-                ['excluded_file.rst', 'b/1.rst', 'b/2.rst', 'b/excluded_file.rst'],
-                ['**excluded_file.rst'],
-                {'', 'b', 'b/1.rst', 'b/2.rst'},
+                pytest.param(
+                    ['b'],
+                    ['excluded_file.rst', 'b/1.rst', 'b/2.rst', 'b/excluded_file.rst'],
+                    ['**excluded_file.rst'],
+                    {'', 'b', 'b/1.rst', 'b/2.rst'},
+                    id='file in subdir and in root',
+                )
             ),
             (
-                # файл в корне, но не в подпапке
-                ['c'],
-                ['1.rst', 'excluded_file.rst', 'c/2.rst', 'c/excluded_file.rst'],
-                ['*/excluded_file.rst'],
-                {'', '1.rst', 'c', 'c/2.rst', 'c/excluded_file.rst'},
+                pytest.param(
+                    ['c'],
+                    ['1.rst', 'excluded_file.rst', 'c/2.rst', 'c/excluded_file.rst'],
+                    ['*/excluded_file.rst'],
+                    {'', '1.rst', 'c', 'c/2.rst', 'c/excluded_file.rst'},
+                    id='file in root but not in subdir',
+                )
             ),
             (
-                # все файлы с одинаковым началом/концом
-                [],
-                ['bad_file.rst', 'bad_table.rst', 'bad_images.rst', 'good_file.rst'],
-                ['**bad*'],
-                {'', 'good_file.rst'},
+                pytest.param(
+                    [],
+                    ['bad_file.rst', 'bad_table.rst', 'bad_images.rst', 'good_file.rst'],
+                    ['**bad*'],
+                    {'', 'good_file.rst'},
+                    id='files with prefix/suffix',
+                )
             ),
             (
-                # все файлы c 1-значным номером
-                [],
-                ['good_1.rst', 'good_2.rst', 'good_11.rst'],
-                ['**good_?.rst'],
-                {'', 'good_11.rst'},
+                pytest.param(
+                    [],
+                    ['good_1.rst', 'good_2.rst', 'good_11.rst'],
+                    ['**good_?.rst'],
+                    {'', 'good_11.rst'},
+                    id='files with single-digit number',
+                )
             ),
             (
-                # папки
-                ['d1', 'd2', 'excluded_folder'],
-                ['d1/1.rst', 'd2/2.rst', 'excluded_folder/other.rst'],
-                ['**excluded_folder**'],
-                {'', 'd1', 'd1/1.rst', 'd2', 'd2/2.rst'}
-            )
+                pytest.param(
+                    ['d1', 'd2', 'excluded_folder'],
+                    ['d1/1.rst', 'd2/2.rst', 'excluded_folder/other.rst'],
+                    ['**excluded_folder**'],
+                    {'', 'd1', 'd1/1.rst', 'd2', 'd2/2.rst'},
+                    id='folders',
+                )
+            ),
         ],
     )
     def test_list_files_exclude_patterns_files(
