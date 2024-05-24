@@ -3,19 +3,51 @@ name: Ruff and Mypy checks
 on: push
 
 jobs:
-  ruff-and-mypy-checks:
-    runs-on: ubuntu-latest
+  pytest:
+    runs-on: ubuntu-22.04
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+        with:
+          ssh-key: ${{ secrets.ACTIONS_RUNNER_RO_ACCESS_KEY }}
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install . mypy ruff
+      - name: Install apt dependencies
+        run: apt-get install -y rsync cron
+
+      - name: Install python dependencies
+        run: pip install pytest; pip install -r requirements.txt
+
+
+      - name: Make authorized_keys
+        run: touch ~/.ssh/authorized_keys
+
+      - name: Run tests
+        run: make test
+        env:
+          TZ: "UTC"
+
+  mypy:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ssh-key: ${{ secrets.ACTIONS_RUNNER_RO_ACCESS_KEY }}
+
+      - name: Install python dependencies
+        run: pip install mypy
 
       - name: Run mypy
-        run: mypy
+        run: make analyze
 
-      - name: Run ruff
-        run: ruff check
+  linter:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ssh-known-hosts: ${{ secrets.ACTION_RUNNER_OKR_KNOWN_HOSTS }}
+          ssh-key: ${{ secrets.ACTIONS_RUNNER_RO_ACCESS_KEY }}
+
+      - name: Install python dependencies
+        run: pip install ruff
+
+      - name: Run ruff linter
+        run: make format-check
