@@ -8,11 +8,11 @@ from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx.errors import ExtensionError
 from sphinx.util import logging
+from sphinx.util.matching import Matcher
 
 logger = logging.getLogger(__name__)
 SPHINX_SERVICE_FILE_PREFIX = "autotoc"
 SPHINX_INDEX_FILE_NAME = "autotoc.rst"
-IGNORE_LIST = {".git", ".idea", "logs", ".venv", ".vscode", "venv"}
 NAV_PATTERN = """
 {dirname}
 ==========
@@ -134,7 +134,7 @@ def _update_main_page_dirs(main_page_dirs: dict[Path, list[Path]],
                            get_headers_from_subfolder: bool,
                            current_dir: Path,
                            src_path: Path,
-                           current_dir_files: list[Path]):
+                           current_dir_files: list[Path]) -> None:
     if get_headers_from_subfolder:
         if current_dir.parent == src_path:
             main_page_dirs.update({current_dir: current_dir_files})
@@ -391,45 +391,44 @@ def _flatmap(docs_directory: Path, cfg: Config) -> dict[Path, set[Path]]:
     :return: Маршруты файлов в папке
     """
     roots: dict[Path, set[Path]] = defaultdict(set)
-    for file in _list_files(docs_directory):
+    for file in _list_files(docs_directory, cfg["exclude_patterns"]):
         if (file.parent.name and
                 (file.suffix in cfg.source_suffix or (docs_directory / file).is_dir())):
             roots[docs_directory / file.parent].add(Path(file.name))
     return roots
 
 
-def _list_files(docs_directory: Path) -> set[Path]:
+def _list_files(docs_directory: Path, exclude_patterns: list[str]) -> set[Path]:
     """
-    Составляет список файлов в папках. Игнорирует файлы и папки, указанные в IGNORE_LIST
+    Составляет список файлов в папках. Игнорирует файлы и папки, указанные в параметре
+    exclude_patterns в конфигурации.
 
     :param docs_directory: Папка с документацией.
     :return: Пути к файлам.
     """
     result = set()
+    matcher = Matcher(exclude_patterns)
+    for root, _, files in os.walk(docs_directory):
+        root_path = Path(root)
+        relative_root = root_path.relative_to(docs_directory)
 
-    def _should_ignore(p: Path) -> bool:
-        return (any(part in IGNORE_LIST for part in p.parts)
-                or any(part.startswith("_") for part in p.parts))
-
-    for root, dirs, files in os.walk(docs_directory):
-        if _should_ignore(Path(root)):
+        if matcher(root):
             continue
 
-        # Filter out ignored directories and their contents
-        dirs[:] = [d for d in dirs if not _should_ignore(Path(os.path.join(root, d)))]
-
         for file in files:
-            if _should_ignore(Path(os.path.join(root, file))):
-                continue
-            result.add(
-                Path(os.path.relpath(os.path.join(root, file), start=docs_directory))
-            )
+            file_path = relative_root / file
 
-        for directory in dirs:
-            result.add(
-                Path(
-                    os.path.relpath(os.path.join(root, directory), start=docs_directory)
-                )
-            )
+            underscored = relative_root.name.startswith('_')
+            excluded = matcher(str(file_path))
+            not_an_rst = file_path.suffix != '.rst'
+
+            if underscored or excluded or not_an_rst:
+                continue
+
+            result.add(file_path)
+            # [:-1] в родителях файла исключает '.'
+            parent_dirs = list(file_path.parents)[:-1]
+            for parent_dir in parent_dirs:
+                result.add(parent_dir)
 
     return result
