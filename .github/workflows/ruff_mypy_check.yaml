@@ -16,10 +16,6 @@ jobs:
       - name: Install python dependencies
         run: pip install pytest; pip install -r requirements.txt
 
-
-      - name: Make authorized_keys
-        run: touch ~/.ssh/authorized_keys
-
       - name: Run tests
         run: make test
         env:
