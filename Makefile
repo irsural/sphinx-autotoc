@@ -10,10 +10,9 @@ analyze:
 
 lint:
 	python3 -m ruff check
+	python3 -m ruff format sphinx_autotoc tests/*.py --check
 
 format:
 	python3 -m ruff check --fix sphinx_autotoc tests/*.py
 	python3 -m ruff format sphinx_autotoc tests/*.py
 
-format-check: linter
-	python3 -m ruff format sphinx_autotoc tests/*.py --check
