@@ -103,5 +103,4 @@ line-ending = "auto"
 
 [tool.mypy]
 files = "sphinx_autotoc/__init__.py,tests/*.py"
-ignore_missing_imports = "True"
 strict = "True"
