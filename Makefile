@@ -1,6 +1,11 @@
 root := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 export PYTHONPATH=$(root)
+install:
+	python3 -m pip install .
+
+dev-install:
+	python3 -m pip install .[dev]
 
 test:
 	python3 -m pytest
