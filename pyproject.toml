@@ -14,7 +14,16 @@ classifiers = [
 ]
 
 dependencies = [
-    "sphinx",
+    'Sphinx',
+    'build',
+    'natsort',
+]
+[project.optional-dependencies]
+dev = [
+    'pytest==7.1.2',
+    'ruff==0.3.0',
+    'mypy==1.8.0',
+    'mypy-extensions==1.0.0'
 ]
 [build-system]
 requires = ["setuptools"]
@@ -22,9 +31,6 @@ build-backend = "setuptools.build_meta"
 
 [project.urls]
 Homepage = "https://github.com/irsural/sphinx-autotoc"
-
-[tool.setuptools.dynamic]
-dependencies = {file = ["requirements.txt"]}
 
 
 [tool.ruff]
