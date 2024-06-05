@@ -11,8 +11,8 @@ from sphinx.util import logging
 from sphinx.util.matching import Matcher
 
 logger = logging.getLogger(__name__)
-SPHINX_SERVICE_FILE_PREFIX = "autotoc"
-SPHINX_INDEX_FILE_NAME = "autotoc.rst"
+SPHINX_SERVICE_FILE_PREFIX = 'autotoc'
+SPHINX_INDEX_FILE_NAME = 'autotoc.rst'
 NAV_PATTERN = """
 {dirname}
 ==========
@@ -39,14 +39,14 @@ TOCTREE = """
 
 def run_make_indexes(app: Sphinx) -> None:
     logger.info('Running make_indexes...')
-    app.config["root_doc"] = "autotoc"
+    app.config['root_doc'] = 'autotoc'
     make_indexes(Path(app.srcdir), app.config)
 
 
 def setup(app: Sphinx) -> None:
-    app.add_config_value("sphinx_autotoc_trim_folder_numbers", False, "html", bool)
-    app.add_config_value("sphinx_autotoc_get_headers_from_subfolder", False, "html", bool)
-    app.add_config_value("sphinx_autotoc_header", "Содержание", "html", str)
+    app.add_config_value('sphinx_autotoc_trim_folder_numbers', False, 'html', bool)
+    app.add_config_value('sphinx_autotoc_get_headers_from_subfolder', False, 'html', bool)
+    app.add_config_value('sphinx_autotoc_header', 'Содержание', 'html', str)
     app.connect('builder-inited', run_make_indexes, 250)
 
 
@@ -57,10 +57,10 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
     """
     main_page = MAIN_PAGE
     index = docs_directory / SPHINX_INDEX_FILE_NAME
-    get_headers_from_subfolder = cfg["sphinx_autotoc_get_headers_from_subfolder"]
-    header_text = cfg["sphinx_autotoc_header"]
-    trim_folder_numbers = cfg["sphinx_autotoc_trim_folder_numbers"]
-    src_path = docs_directory / "src"
+    get_headers_from_subfolder = cfg['sphinx_autotoc_get_headers_from_subfolder']
+    header_text = cfg['sphinx_autotoc_header']
+    trim_folder_numbers = cfg['sphinx_autotoc_trim_folder_numbers']
+    src_path = docs_directory / 'src'
     _check_folder_existence(src_path)
     autosummary_flag = _check_autosummary_flag(cfg)
     autosummary_dict: dict[Path, tuple[str, str]] = {}
@@ -71,70 +71,70 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
         main_page_dirs = {src_path: []}
 
     for current_dir, current_dir_files in _iter_dirs(docs_directory, cfg):
-        _process_dir_and_files(src_path,
-                               current_dir,
-                               current_dir_files,
-                               autosummary_flag,
-                               autosummary_dict,
-                               get_headers_from_subfolder,
-                               main_page_dirs,
-                               trim_folder_numbers)
+        _process_dir_and_files(
+            src_path,
+            current_dir,
+            current_dir_files,
+            autosummary_flag,
+            autosummary_dict,
+            get_headers_from_subfolder,
+            main_page_dirs,
+            trim_folder_numbers,
+        )
 
-    main_page = _add_to_main_page(main_page_dirs,
-                                  main_page,
-                                  trim_folder_numbers,
-                                  get_headers_from_subfolder,
-                                  header_text)
+    main_page = _add_to_main_page(
+        main_page_dirs, main_page, trim_folder_numbers, get_headers_from_subfolder, header_text
+    )
 
-    with open(index, "w", encoding="utf8") as f:
-        f.write(main_page.format(project=cfg.project, dop="=" * len(cfg.project)))
+    with open(index, 'w', encoding='utf8') as f:
+        f.write(main_page.format(project=cfg.project, dop='=' * len(cfg.project)))
 
     if autosummary_flag:
         _replace_autosummary(autosummary_dict, docs_directory, index)
 
 
 def _check_autosummary_flag(cfg: Config) -> bool:
-    if "sphinx.ext.autosummary" in cfg.extensions and cfg.autosummary_generate:
-        logger.info("autosummary found!")
+    if 'sphinx.ext.autosummary' in cfg.extensions and cfg.autosummary_generate:
+        logger.info('autosummary found!')
         return True
     return False
 
 
 def _process_dir_and_files(
-        src_path: Path,
-        current_dir: Path,
-        current_dir_files: list[Path],
-        autosummary_flag: bool,
-        autosummary_dict: dict[Path, tuple[str, str]],
-        get_headers_from_subfolder: bool,
-        main_page_dirs: dict[Path, list[Path]],
-        trim_folder_numbers: bool) -> None:
-
+    src_path: Path,
+    current_dir: Path,
+    current_dir_files: list[Path],
+    autosummary_flag: bool,
+    autosummary_dict: dict[Path, tuple[str, str]],
+    get_headers_from_subfolder: bool,
+    main_page_dirs: dict[Path, list[Path]],
+    trim_folder_numbers: bool,
+) -> None:
     if autosummary_flag:
         for file in current_dir_files:
-            if file.name == "autotoc.autosummary.rst":
+            if file.name == 'autotoc.autosummary.rst':
                 autosummary_info = _parse_autosummary(current_dir / file)
                 if autosummary_info:
                     autosummary_dict[current_dir / file] = autosummary_info
 
-    if current_dir.name == "_autosummary":
+    if current_dir.name == '_autosummary':
         return
 
     if current_dir != src_path:
         _add_to_nav(current_dir, current_dir_files, trim_folder_numbers)
 
-    _update_main_page_dirs(main_page_dirs,
-                           get_headers_from_subfolder,
-                           current_dir,
-                           src_path,
-                           current_dir_files)
+    _update_main_page_dirs(
+        main_page_dirs, get_headers_from_subfolder, current_dir, src_path, current_dir_files
+    )
 
 
-def _update_main_page_dirs(main_page_dirs: dict[Path, list[Path]],
-                           get_headers_from_subfolder: bool,
-                           current_dir: Path,
-                           src_path: Path,
-                           current_dir_files: list[Path]) -> None:
+def _update_main_page_dirs(
+    main_page_dirs: dict[Path, list[Path]],
+    get_headers_from_subfolder: bool,
+    current_dir: Path,
+    src_path: Path,
+    current_dir_files: list[Path],
+) -> None:
     if get_headers_from_subfolder:
         if current_dir.parent == src_path:
             main_page_dirs.update({current_dir: current_dir_files})
@@ -147,13 +147,13 @@ def _update_main_page_dirs(main_page_dirs: dict[Path, list[Path]],
 
 def _check_folder_existence(folder: Path) -> None:
     if not folder.exists() or not any(folder.iterdir()):
-        errormsg = f"Папка {folder} не существует или пуста."
+        errormsg = f'Папка {folder} не существует или пуста.'
         raise ExtensionError(errormsg)
 
 
-def _replace_autosummary(autosummary_dict: dict[Path, tuple[str, str]],
-                         docs_directory: Path,
-                         index: Path) -> None:
+def _replace_autosummary(
+    autosummary_dict: dict[Path, tuple[str, str]], docs_directory: Path, index: Path
+) -> None:
     """
     Меняет заголовок ссылки на autosummary на заголовок файла с директивой autosummary.
 
@@ -164,20 +164,21 @@ def _replace_autosummary(autosummary_dict: dict[Path, tuple[str, str]],
     for file_path, (file_header, module_name) in autosummary_dict.items():
         if any((file_header, module_name, file_path)) is None:
             continue
-        logger.debug("module name: %s, file path:%s", module_name, file_path)
-        logger.info("Working on autosummary reference...")
+        logger.debug('module name: %s, file path:%s', module_name, file_path)
+        logger.info('Working on autosummary reference...')
         autosummary_index = _get_dir_index(file_path.parent)
         if autosummary_index.parent == docs_directory:
             autosummary_index = index
-        elif autosummary_index.parent.parent == docs_directory / "src":
-            _replace_autosummary_with_api_reference(index, file_path,
-                                                    module_name, file_header)
-        _replace_autosummary_with_api_reference(autosummary_index, file_path,
-                                                module_name, file_header)
+        elif autosummary_index.parent.parent == docs_directory / 'src':
+            _replace_autosummary_with_api_reference(index, file_path, module_name, file_header)
+        _replace_autosummary_with_api_reference(
+            autosummary_index, file_path, module_name, file_header
+        )
 
 
-def _replace_autosummary_with_api_reference(index: Path, file_path: Path,
-                                            module_name: str, autosummary_header: str) -> None:
+def _replace_autosummary_with_api_reference(
+    index: Path, file_path: Path, module_name: str, autosummary_header: str
+) -> None:
     """
     Заменяет ссылку на autosummary в индексной странице на ссылку на API reference.
 
@@ -186,13 +187,15 @@ def _replace_autosummary_with_api_reference(index: Path, file_path: Path,
     :param module_name: Имя модуля autosummary.
     :param autosummary_header: Заголовок для autosummary.
     """
-    with open(index, 'r+', encoding="utf8") as f:
+    with open(index, 'r+', encoding='utf8') as f:
         f.seek(0)
         lines = f.readlines()
         for i, line in enumerate(lines):
             if file_path.name in line:
-                lines[i] = (f"   {autosummary_header} <"
-                            f"{Path(line.strip()).parent / '_autosummary' / module_name}>\n")
+                lines[i] = (
+                    f"   {autosummary_header} <"
+                    f"{Path(line.strip()).parent / '_autosummary' / module_name}>\n"
+                )
         f.seek(0)
         f.writelines(lines)
         f.truncate()
@@ -238,13 +241,13 @@ def _add_to_main_page(
         str_search_paths: list[str] = []
         if get_headers_from_subfolder:
             for item in search_paths:
-                str_search_paths.append(f"src/{path.name}/{item}")
+                str_search_paths.append(f'src/{path.name}/{item}')
         else:
             for item in search_paths:
-                str_search_paths.append(f"{path.name}/{item}")
+                str_search_paths.append(f'{path.name}/{item}')
         main_page += TOCTREE.format(
             group_name=dirname if get_headers_from_subfolder else header_text,
-            group_dirs="\n   ".join(str_search_paths),
+            group_dirs='\n   '.join(str_search_paths),
         )
     return main_page
 
@@ -260,20 +263,20 @@ def _add_to_nav(path: Path, docs: list[Path], trim_folder_numbers: bool) -> None
     :param docs: Список файлов в папке.
     :param trim_folder_numbers: Удалять ли номера папок.
     """
-    content = ""
-    include_file = path / "README.md"
+    content = ''
+    include_file = path / 'README.md'
     if include_file.exists():
-        with open(include_file.as_posix(), encoding="utf8") as f:
+        with open(include_file.as_posix(), encoding='utf8') as f:
             content = f.read()
 
     index_path = _get_dir_index(path)
     dirname = trim_leading_numbers(path.name) if trim_folder_numbers else path.name
     search_paths = _make_search_paths(path, docs)
-    with open(index_path.as_posix(), "w", encoding="utf-8") as f:
+    with open(index_path.as_posix(), 'w', encoding='utf-8') as f:
         f.write(
             NAV_PATTERN.format(
                 dirname=dirname,
-                search_paths="\n   ".join(map(str, search_paths)),
+                search_paths='\n   '.join(map(str, search_paths)),
                 includes=content,
             )
         )
@@ -289,7 +292,7 @@ def trim_leading_numbers(input: str) -> str:
     :param input: Строка с номером
     :return: Строка без номера, если совпадает с шаблоном "123. строка"
     """
-    split_path = input.split(".", maxsplit=1)
+    split_path = input.split('.', maxsplit=1)
     if len(split_path) == 2:
         number, name = split_path
         name = name.lstrip()
@@ -305,7 +308,7 @@ def _get_dir_index(path: Path) -> Path:
     :param path: Путь до папки.
     :return: Путь до сервисного файла папки.
     """
-    return path / f"{SPHINX_SERVICE_FILE_PREFIX}.{path.name}.rst"
+    return path / f'{SPHINX_SERVICE_FILE_PREFIX}.{path.name}.rst'
 
 
 def _make_search_paths(root: Path, f: list[Path]) -> list[Path]:
@@ -314,7 +317,8 @@ def _make_search_paths(root: Path, f: list[Path]) -> list[Path]:
 
     Если содержимое - файл, добавляется путь к файлу (root/file.txt)
 
-    Если содержимое - папка, добавляется путь к файлу содержания этой папки (root/dir/autotoc.dir.rst)
+    Если содержимое - папка, добавляется путь к файлу содержания этой папки
+    (root/dir/autotoc.dir.rst)
 
     Итоговый список содержит пути к папкам и файлам, отсортированные по типу: сначала идут
     папки, отсортированные по алфавиту, затем - файлы, также отсортированные по алфавиту.
@@ -331,7 +335,7 @@ def _make_search_paths(root: Path, f: list[Path]) -> list[Path]:
             folder_paths.add(file)
         else:
             # Если смотрим файл содержания текущей папки
-            if file.stem == f"{SPHINX_SERVICE_FILE_PREFIX}.{root.name}":
+            if file.stem == f'{SPHINX_SERVICE_FILE_PREFIX}.{root.name}':
                 continue
 
             file_paths.add(file)
@@ -339,7 +343,7 @@ def _make_search_paths(root: Path, f: list[Path]) -> list[Path]:
     file_paths_list = natsorted(file_paths, key=lambda x: Path(x).stem)
     folder_paths_list = natsorted(
         folder_paths,
-        key=lambda x: Path(x).stem.replace(f"{SPHINX_SERVICE_FILE_PREFIX}.", ""),
+        key=lambda x: Path(x).stem.replace(f'{SPHINX_SERVICE_FILE_PREFIX}.', ''),
     )
     return folder_paths_list + file_paths_list
 
@@ -391,9 +395,10 @@ def _flatmap(docs_directory: Path, cfg: Config) -> dict[Path, set[Path]]:
     :return: Маршруты файлов в папке
     """
     roots: dict[Path, set[Path]] = defaultdict(set)
-    for file in _list_files(docs_directory, cfg["exclude_patterns"]):
-        if (file.parent.name and
-                (file.suffix in cfg.source_suffix or (docs_directory / file).is_dir())):
+    for file in _list_files(docs_directory, cfg['exclude_patterns']):
+        if file.parent.name and (
+            file.suffix in cfg.source_suffix or (docs_directory / file).is_dir()
+        ):
             roots[docs_directory / file.parent].add(Path(file.name))
     return roots
 

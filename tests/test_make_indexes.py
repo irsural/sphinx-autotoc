@@ -9,7 +9,7 @@ from sphinx.errors import ConfigError
 from sphinx_autotoc import _list_files, _make_search_paths, make_indexes, trim_leading_numbers
 
 MAKE_INDEXES_TEST_PROJECTS_DIR = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), "make_indexes_test_projects"
+    os.path.dirname(os.path.realpath(__file__)), 'make_indexes_test_projects'
 )
 
 
@@ -17,14 +17,14 @@ def activate_cfg(path: Path) -> Config:
     cfg = Config.read(path)
     cfg.pre_init_values()
     cfg.init_values()
-    cfg.add("sphinx_autotoc_trim_folder_numbers", False, "html", bool)
-    cfg.add("sphinx_autotoc_get_headers_from_subfolder", False, "html", bool)
-    cfg.add("sphinx_autotoc_header", "Содержание", "html", str)
+    cfg.add('sphinx_autotoc_trim_folder_numbers', False, 'html', bool)
+    cfg.add('sphinx_autotoc_get_headers_from_subfolder', False, 'html', bool)
+    cfg.add('sphinx_autotoc_header', 'Содержание', 'html', str)
     return cfg
 
 
 def test_make_indexes_wrong_directory() -> None:
-    path = Path(MAKE_INDEXES_TEST_PROJECTS_DIR) / "doesnotexist"
+    path = Path(MAKE_INDEXES_TEST_PROJECTS_DIR) / 'doesnotexist'
     with pytest.raises(ConfigError):
         cfg = activate_cfg(path)
         make_indexes(path, cfg)
@@ -32,18 +32,18 @@ def test_make_indexes_wrong_directory() -> None:
 
 class TestTrimLeadingNumbers:
     @pytest.mark.parametrize(
-        "original,modified",
+        'original,modified',
         [
-            ("1425. faire46", "faire46"),
-            ("No leading number", "No leading number"),
-            ("", ""),
-            ("   42. with spaces", "   42. with spaces"),
-            ("1234. !@#$%^&*()", "!@#$%^&*()"),
-            ("1234.", "1234."),
-            ("5678.foo", "foo"),
-            ("1234. text with 5678 number", "text with 5678 number"),
-            ("1234. 5678. double number dot", "5678. double number dot"),
-            ("5678.\nnew line", "new line"),
+            ('1425. faire46', 'faire46'),
+            ('No leading number', 'No leading number'),
+            ('', ''),
+            ('   42. with spaces', '   42. with spaces'),
+            ('1234. !@#$%^&*()', '!@#$%^&*()'),
+            ('1234.', '1234.'),
+            ('5678.foo', 'foo'),
+            ('1234. text with 5678 number', 'text with 5678 number'),
+            ('1234. 5678. double number dot', '5678. double number dot'),
+            ('5678.\nnew line', 'new line'),
         ],
     )
     def test_trim_leading_numbers(self, original: str, modified: str) -> None:
@@ -51,14 +51,14 @@ class TestTrimLeadingNumbers:
 
 
 class TestMakeIndexesFlags:
-    project_path = Path(MAKE_INDEXES_TEST_PROJECTS_DIR, "3_levels_of_nesting")
+    project_path = Path(MAKE_INDEXES_TEST_PROJECTS_DIR, '3_levels_of_nesting')
 
     def test_make_indexes_default_flags(self) -> None:
         cfg = activate_cfg(self.project_path)
 
         make_indexes(self.project_path, cfg)
-        assert os.path.isfile(self.project_path / "autotoc.rst")
-        with open(self.project_path / "autotoc.rst", encoding="utf8") as f:
+        assert os.path.isfile(self.project_path / 'autotoc.rst')
+        with open(self.project_path / 'autotoc.rst', encoding='utf8') as f:
             assert f.read() == dedent("""
             3 levels of nesting Test Project
             ====================================================
@@ -72,11 +72,11 @@ class TestMakeIndexesFlags:
     def test_make_indexes_sf(self) -> None:
         cfg = activate_cfg(self.project_path)
 
-        cfg["sphinx_autotoc_get_headers_from_subfolder"] = True
+        cfg['sphinx_autotoc_get_headers_from_subfolder'] = True
 
         make_indexes(self.project_path, cfg)
-        assert os.path.isfile(self.project_path / "autotoc.rst")
-        with open(self.project_path / "autotoc.rst", encoding="utf8") as f:
+        assert os.path.isfile(self.project_path / 'autotoc.rst')
+        with open(self.project_path / 'autotoc.rst', encoding='utf8') as f:
             assert f.read() == dedent("""
             3 levels of nesting Test Project
             ====================================================
@@ -92,12 +92,12 @@ class TestMakeIndexesFlags:
     def test_make_indexes_trim(self) -> None:
         cfg = activate_cfg(self.project_path)
 
-        cfg["sphinx_autotoc_trim_folder_numbers"] = True
+        cfg['sphinx_autotoc_trim_folder_numbers'] = True
 
         make_indexes(self.project_path, cfg)
-        rst = self.project_path / "src" / "1. level1" / "autotoc.1. level1.rst"
+        rst = self.project_path / 'src' / '1. level1' / 'autotoc.1. level1.rst'
         assert rst.is_file()
-        with open(rst, encoding="utf8") as f:
+        with open(rst, encoding='utf8') as f:
             assert f.read() == dedent("""
             level1
             ==========
@@ -114,12 +114,12 @@ class TestMakeIndexesFlags:
     def test_make_indexes_sf_trim(self) -> None:
         cfg = activate_cfg(self.project_path)
 
-        cfg["sphinx_autotoc_get_headers_from_subfolder"] = True
-        cfg["sphinx_autotoc_trim_folder_numbers"] = True
+        cfg['sphinx_autotoc_get_headers_from_subfolder'] = True
+        cfg['sphinx_autotoc_trim_folder_numbers'] = True
 
         make_indexes(self.project_path, cfg)
-        assert os.path.isfile(self.project_path / "autotoc.rst")
-        with open(self.project_path / "autotoc.rst", encoding="utf8") as f:
+        assert os.path.isfile(self.project_path / 'autotoc.rst')
+        with open(self.project_path / 'autotoc.rst', encoding='utf8') as f:
             assert f.read() == dedent("""
             3 levels of nesting Test Project
             ====================================================
@@ -135,10 +135,10 @@ class TestMakeIndexesFlags:
     def test_make_indexes_custom_header(self) -> None:
         cfg = activate_cfg(self.project_path)
 
-        cfg["sphinx_autotoc_header"] = "custom header"
+        cfg['sphinx_autotoc_header'] = 'custom header'
         make_indexes(self.project_path, cfg)
-        assert os.path.isfile(self.project_path / "autotoc.rst")
-        with open(self.project_path / "autotoc.rst", encoding="utf8") as f:
+        assert os.path.isfile(self.project_path / 'autotoc.rst')
+        with open(self.project_path / 'autotoc.rst', encoding='utf8') as f:
             assert f.read() == dedent("""
             3 levels of nesting Test Project
             ====================================================
@@ -151,35 +151,32 @@ class TestMakeIndexesFlags:
 
 
 class TestAutosummaryCompatibility:
-    project_path = Path(MAKE_INDEXES_TEST_PROJECTS_DIR, "autosummary_test")
+    project_path = Path(MAKE_INDEXES_TEST_PROJECTS_DIR, 'autosummary_test')
 
     @pytest.mark.parametrize(
-        "test_file_path, test_file_line",
+        'test_file_path, test_file_line',
         [
             (
-                project_path / "autotoc.rst",
-                "   L1header <src/1. level1/_autosummary/Level1>\n",
+                project_path / 'autotoc.rst',
+                '   L1header <src/1. level1/_autosummary/Level1>\n',
             ),
             (
-                project_path / "src/1. level1/autotoc.1. level1.rst",
-                "   L1header <_autosummary/Level1>\n",
+                project_path / 'src/1. level1/autotoc.1. level1.rst',
+                '   L1header <_autosummary/Level1>\n',
             ),
             (
-                project_path / "src/1. level1/2. level2/autotoc.2. level2.rst",
-                "   l2header <_autosummary/Level2>\n",
+                project_path / 'src/1. level1/2. level2/autotoc.2. level2.rst',
+                '   l2header <_autosummary/Level2>\n',
             ),
             (
-                project_path
-                / "src/1. level1/2. level2/3. level3/autotoc.3. level3.rst",
-                "   l3 <_autosummary/Level3>\n",
+                project_path / 'src/1. level1/2. level2/3. level3/autotoc.3. level3.rst',
+                '   l3 <_autosummary/Level3>\n',
             ),
         ],
     )
-    def test_autosummary_in_several_levels(
-        self, test_file_path: Path, test_file_line: str
-    ) -> None:
+    def test_autosummary_in_several_levels(self, test_file_path: Path, test_file_line: str) -> None:
         cfg = activate_cfg(self.project_path)
-        cfg.add("autosummary_generate", True, "html", bool)
+        cfg.add('autosummary_generate', True, 'html', bool)
         cfg['sphinx_autotoc_get_headers_from_subfolder'] = True
         make_indexes(self.project_path, cfg)
         assert os.path.isfile(test_file_path)
@@ -200,60 +197,55 @@ def prepare_search_paths(root: Path, file_list: list[str], folder_list: list[str
 
 
 class TestMakeSearchPaths:
-
     def test_search_paths_add_files(self, tmp_path: Path) -> None:
-        full_file_list = prepare_search_paths(
-            tmp_path,
-                ["file.rst"],
-            []
-        )
+        full_file_list = prepare_search_paths(tmp_path, ['file.rst'], [])
         search_paths = _make_search_paths(tmp_path, full_file_list)
-        assert search_paths == [Path("file.rst")]
+        assert search_paths == [Path('file.rst')]
 
     def test_search_paths_ignore_autotoc_of_current_folder(self, tmp_path: Path) -> None:
-        full_file_list = prepare_search_paths(
-            tmp_path,
-            [f"autotoc.{tmp_path.name}.rst"],
-            []
-        )
+        full_file_list = prepare_search_paths(tmp_path, [f'autotoc.{tmp_path.name}.rst'], [])
 
         search_paths = _make_search_paths(tmp_path, full_file_list)
-        assert Path(f"autotoc.{tmp_path.name}.rst") not in search_paths
+        assert Path(f'autotoc.{tmp_path.name}.rst') not in search_paths
 
     def test_search_paths_add_folders(self, tmp_path: Path) -> None:
-        full_file_list = prepare_search_paths(
-            tmp_path,
-            [],
-            ["folder1"]
-        )
+        full_file_list = prepare_search_paths(tmp_path, [], ['folder1'])
 
         search_paths = _make_search_paths(tmp_path, full_file_list)
-        assert search_paths == [Path("folder1/autotoc.folder1.rst")]
+        assert search_paths == [Path('folder1/autotoc.folder1.rst')]
 
     def test_search_paths_natsorted_order(self, tmp_path: Path) -> None:
         full_file_list = prepare_search_paths(
-            tmp_path,
-            ["100file.rst", "50file.rst", "200file.rst"],
-            []
+            tmp_path, ['100file.rst', '50file.rst', '200file.rst'], []
         )
 
         search_paths = _make_search_paths(tmp_path, full_file_list)
-        assert search_paths == [Path("50file.rst"), Path("100file.rst"), Path("200file.rst"), ]
+        assert search_paths == [
+            Path('50file.rst'),
+            Path('100file.rst'),
+            Path('200file.rst'),
+        ]
 
     def test_search_paths_folders_before_files(self, tmp_path: Path) -> None:
         full_file_list = prepare_search_paths(
             tmp_path,
-            ["file1.rst", "file2.rst",],
-            ["folder1", "folder2"]
+            [
+                'file1.rst',
+                'file2.rst',
+            ],
+            ['folder1', 'folder2'],
         )
 
         search_paths = _make_search_paths(tmp_path, full_file_list)
-        assert search_paths == [Path(item) for item in [
-            "folder1/autotoc.folder1.rst",
-            "folder2/autotoc.folder2.rst",
-            "file1.rst",
-            "file2.rst"
-        ]], "Папки должны идти в содержании раньше файлов"
+        assert search_paths == [
+            Path(item)
+            for item in [
+                'folder1/autotoc.folder1.rst',
+                'folder2/autotoc.folder2.rst',
+                'file1.rst',
+                'file2.rst',
+            ]
+        ], 'Папки должны идти в содержании раньше файлов'
 
 
 def setup_list_files_dir(tmp_path: Path, folders: list[str], files: list[str]) -> None:
