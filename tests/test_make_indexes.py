@@ -268,7 +268,7 @@ class TestListFiles:
                 'folder1/folder12/12.rst',
             ],
         )
-        set = _list_files(tmp_path, [])
+        set = _list_files(tmp_path, [], ['.rst'])
         expected = {
             Path(item)
             for item in [
@@ -285,29 +285,29 @@ class TestListFiles:
 
     def test_list_files_empty_directory(self, tmp_path: Path) -> None:
         setup_list_files_dir(tmp_path, ['folder1/folder12'], ['folder1/1.rst'])
-        set = _list_files(tmp_path, [])
+        set = _list_files(tmp_path, [], ['.rst'])
         assert Path('src/folder1/folder12') not in set
 
     def test_list_files_empty_directory_with_rst_in_subdirectory(self, tmp_path: Path) -> None:
         setup_list_files_dir(tmp_path, ['folder1/folder12'], ['folder1/folder12/12.rst'])
-        set = _list_files(tmp_path, [])
+        set = _list_files(tmp_path, [], ['.rst'])
         assert Path('src/folder1') in set
 
     def test_list_files_non_rst_files(self, tmp_path: Path) -> None:
         setup_list_files_dir(tmp_path, [], ['1.txt', '2.py'])
-        assert _list_files(tmp_path, []) == set()
+        assert _list_files(tmp_path, [], ['.rst']) == set()
 
     def test_list_files_mixed_files(self, tmp_path: Path) -> None:
         setup_list_files_dir(
             tmp_path, ['folder1'], ['folder1/1.rst', 'folder1/2.py', 'folder1/3.txt']
         )
         expected = {Path(item) for item in ['src', 'src/folder1/1.rst', 'src/folder1']}
-        assert _list_files(tmp_path, []) == expected
+        assert _list_files(tmp_path, [], ['.rst']) == expected
 
     def test_list_files_underscored_subdirs(self, tmp_path: Path) -> None:
         setup_list_files_dir(tmp_path, ['folder1', '_folder2'], ['folder1/1.rst', '_folder2/2.rst'])
         expected = {Path(item) for item in ['src', 'src/folder1', 'src/folder1/1.rst']}
-        assert _list_files(tmp_path, []) == expected
+        assert _list_files(tmp_path, [], ['.rst']) == expected
 
     @pytest.mark.parametrize(
         'folders, files, exclude_patterns, expected',
@@ -387,7 +387,7 @@ class TestListFiles:
     ) -> None:
         setup_list_files_dir(tmp_path, folders, files)
         expected_paths = {Path('src', item) for item in expected}
-        assert _list_files(tmp_path, exclude_patterns) == expected_paths
+        assert _list_files(tmp_path, exclude_patterns, ['.rst']) == expected_paths
 
     @pytest.mark.parametrize(
         'source_suffixes, result',
