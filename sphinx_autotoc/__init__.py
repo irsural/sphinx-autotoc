@@ -429,9 +429,9 @@ def _list_files(
 
             underscored = relative_root.name.startswith('_')
             excluded = matcher(str(file_path))
-            not_an_rst = file_path.suffix not in source_suffixes
+            has_proper_suffix = file_path.suffix in source_suffixes
 
-            if underscored or excluded or not_an_rst:
+            if underscored or excluded or not has_proper_suffix:
                 continue
 
             result.add(file_path)
