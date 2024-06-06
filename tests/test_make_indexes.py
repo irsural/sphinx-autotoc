@@ -388,3 +388,21 @@ class TestListFiles:
         setup_list_files_dir(tmp_path, folders, files)
         expected_paths = {Path('src', item) for item in expected}
         assert _list_files(tmp_path, exclude_patterns) == expected_paths
+
+    @pytest.mark.parametrize(
+        'source_suffixes, result',
+        [
+            pytest.param(['.md'], {'', '2.md'}, id='list, md'),
+            pytest.param(
+                {'.md': 'Markdown', '.rst': 'reStructuredText'},
+                {'', '2.md', '1.rst'},
+                id='dict, md+rst',
+            ),
+        ],
+    )
+    def test_list_files_process_source_suffixes(
+        self, tmp_path: Path, source_suffixes: list[str] | dict[str, str], result: set[str]
+    ) -> None:
+        setup_list_files_dir(tmp_path, [], ['1.rst', '2.md', '3.txt', '4.doc'])
+        expected = {Path('src', item) for item in result}
+        assert _list_files(tmp_path, [], source_suffixes) == expected
