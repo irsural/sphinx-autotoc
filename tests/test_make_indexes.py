@@ -312,68 +312,54 @@ class TestListFiles:
     @pytest.mark.parametrize(
         'folders, files, exclude_patterns, expected',
         [
-            (
-                pytest.param(
-                    [],
-                    ['1.rst', '2.rst', 'excluded_file.rst'],
-                    ['**excluded_file.rst'],
-                    {'', '1.rst', '2.rst'},
-                    id='root folder',
-                )
+            pytest.param(
+                [],
+                ['1.rst', '2.rst', 'excluded_file.rst'],
+                ['**excluded_file.rst'],
+                {'', '1.rst', '2.rst'},
+                id='root folder',
             ),
-            (
-                pytest.param(
-                    ['a'],
-                    ['excluded_file.rst', 'a/1.rst', 'a/2.rst', 'a/excluded_file.rst'],
-                    ['**a/excluded_file.rst'],
-                    {'', 'a', 'a/1.rst', 'a/2.rst', 'excluded_file.rst'},
-                    id='file in subdir, not in root',
-                )
+            pytest.param(
+                ['a'],
+                ['excluded_file.rst', 'a/1.rst', 'a/2.rst', 'a/excluded_file.rst'],
+                ['**a/excluded_file.rst'],
+                {'', 'a', 'a/1.rst', 'a/2.rst', 'excluded_file.rst'},
+                id='file in subdir, not in root',
             ),
-            (
-                pytest.param(
-                    ['b'],
-                    ['excluded_file.rst', 'b/1.rst', 'b/2.rst', 'b/excluded_file.rst'],
-                    ['**excluded_file.rst'],
-                    {'', 'b', 'b/1.rst', 'b/2.rst'},
-                    id='file in subdir and in root',
-                )
+            pytest.param(
+                ['b'],
+                ['excluded_file.rst', 'b/1.rst', 'b/2.rst', 'b/excluded_file.rst'],
+                ['**excluded_file.rst'],
+                {'', 'b', 'b/1.rst', 'b/2.rst'},
+                id='file in subdir and in root',
             ),
-            (
-                pytest.param(
-                    ['c'],
-                    ['1.rst', 'excluded_file.rst', 'c/2.rst', 'c/excluded_file.rst'],
-                    ['*/excluded_file.rst'],
-                    {'', '1.rst', 'c', 'c/2.rst', 'c/excluded_file.rst'},
-                    id='file in root but not in subdir',
-                )
+            pytest.param(
+                ['c'],
+                ['1.rst', 'excluded_file.rst', 'c/2.rst', 'c/excluded_file.rst'],
+                ['*/excluded_file.rst'],
+                {'', '1.rst', 'c', 'c/2.rst', 'c/excluded_file.rst'},
+                id='file in root but not in subdir',
             ),
-            (
-                pytest.param(
-                    [],
-                    ['bad_file.rst', 'bad_table.rst', 'bad_images.rst', 'good_file.rst'],
-                    ['**bad*'],
-                    {'', 'good_file.rst'},
-                    id='files with prefix/suffix',
-                )
+            pytest.param(
+                [],
+                ['bad_file.rst', 'bad_table.rst', 'bad_images.rst', 'good_file.rst'],
+                ['**bad*'],
+                {'', 'good_file.rst'},
+                id='files with prefix/suffix',
             ),
-            (
-                pytest.param(
-                    [],
-                    ['good_1.rst', 'good_2.rst', 'good_11.rst'],
-                    ['**good_?.rst'],
-                    {'', 'good_11.rst'},
-                    id='files with single-digit number',
-                )
+            pytest.param(
+                [],
+                ['good_1.rst', 'good_2.rst', 'good_11.rst'],
+                ['**good_?.rst'],
+                {'', 'good_11.rst'},
+                id='files with single-digit number',
             ),
-            (
-                pytest.param(
-                    ['d1', 'd2', 'excluded_folder'],
-                    ['d1/1.rst', 'd2/2.rst', 'excluded_folder/other.rst'],
-                    ['**excluded_folder**'],
-                    {'', 'd1', 'd1/1.rst', 'd2', 'd2/2.rst'},
-                    id='folders',
-                )
+            pytest.param(
+                ['d1', 'd2', 'excluded_folder'],
+                ['d1/1.rst', 'd2/2.rst', 'excluded_folder/other.rst'],
+                ['**excluded_folder**'],
+                {'', 'd1', 'd1/1.rst', 'd2', 'd2/2.rst'},
+                id='folders',
             ),
         ],
     )
