@@ -395,7 +395,7 @@ def _flatmap(docs_directory: Path, cfg: Config) -> dict[Path, set[Path]]:
     :return: Маршруты файлов в папке
     """
     roots: dict[Path, set[Path]] = defaultdict(set)
-    for file in _list_files(docs_directory, cfg['exclude_patterns']):
+    for file in _list_files(docs_directory, cfg['exclude_patterns'], cfg['source_suffix']):
         if file.parent.name and (
             file.suffix in cfg.source_suffix or (docs_directory / file).is_dir()
         ):
@@ -403,7 +403,9 @@ def _flatmap(docs_directory: Path, cfg: Config) -> dict[Path, set[Path]]:
     return roots
 
 
-def _list_files(docs_directory: Path, exclude_patterns: list[str]) -> set[Path]:
+def _list_files(
+    docs_directory: Path, exclude_patterns: list[str], source_suffixes: list[str] | dict[str, str]
+) -> set[Path]:
     """
     Составляет список файлов в папках. Игнорирует файлы и папки, указанные в параметре
     exclude_patterns в конфигурации.
@@ -425,9 +427,9 @@ def _list_files(docs_directory: Path, exclude_patterns: list[str]) -> set[Path]:
 
             underscored = relative_root.name.startswith('_')
             excluded = matcher(str(file_path))
-            not_an_rst = file_path.suffix != '.rst'
+            has_proper_suffix = file_path.suffix in source_suffixes
 
-            if underscored or excluded or not_an_rst:
+            if underscored or excluded or not has_proper_suffix:
                 continue
 
             result.add(file_path)

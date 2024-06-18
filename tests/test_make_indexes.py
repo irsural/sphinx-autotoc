@@ -268,7 +268,7 @@ class TestListFiles:
                 'folder1/folder12/12.rst',
             ],
         )
-        set = _list_files(tmp_path, [])
+        set = _list_files(tmp_path, [], ['.rst'])
         expected = {
             Path(item)
             for item in [
@@ -285,95 +285,81 @@ class TestListFiles:
 
     def test_list_files_empty_directory(self, tmp_path: Path) -> None:
         setup_list_files_dir(tmp_path, ['folder1/folder12'], ['folder1/1.rst'])
-        set = _list_files(tmp_path, [])
+        set = _list_files(tmp_path, [], ['.rst'])
         assert Path('src/folder1/folder12') not in set
 
     def test_list_files_empty_directory_with_rst_in_subdirectory(self, tmp_path: Path) -> None:
         setup_list_files_dir(tmp_path, ['folder1/folder12'], ['folder1/folder12/12.rst'])
-        set = _list_files(tmp_path, [])
+        set = _list_files(tmp_path, [], ['.rst'])
         assert Path('src/folder1') in set
 
     def test_list_files_non_rst_files(self, tmp_path: Path) -> None:
         setup_list_files_dir(tmp_path, [], ['1.txt', '2.py'])
-        assert _list_files(tmp_path, []) == set()
+        assert _list_files(tmp_path, [], ['.rst']) == set()
 
     def test_list_files_mixed_files(self, tmp_path: Path) -> None:
         setup_list_files_dir(
             tmp_path, ['folder1'], ['folder1/1.rst', 'folder1/2.py', 'folder1/3.txt']
         )
         expected = {Path(item) for item in ['src', 'src/folder1/1.rst', 'src/folder1']}
-        assert _list_files(tmp_path, []) == expected
+        assert _list_files(tmp_path, [], ['.rst']) == expected
 
     def test_list_files_underscored_subdirs(self, tmp_path: Path) -> None:
         setup_list_files_dir(tmp_path, ['folder1', '_folder2'], ['folder1/1.rst', '_folder2/2.rst'])
         expected = {Path(item) for item in ['src', 'src/folder1', 'src/folder1/1.rst']}
-        assert _list_files(tmp_path, []) == expected
+        assert _list_files(tmp_path, [], ['.rst']) == expected
 
     @pytest.mark.parametrize(
         'folders, files, exclude_patterns, expected',
         [
-            (
-                pytest.param(
-                    [],
-                    ['1.rst', '2.rst', 'excluded_file.rst'],
-                    ['**excluded_file.rst'],
-                    {'', '1.rst', '2.rst'},
-                    id='root folder',
-                )
+            pytest.param(
+                [],
+                ['1.rst', '2.rst', 'excluded_file.rst'],
+                ['**excluded_file.rst'],
+                {'', '1.rst', '2.rst'},
+                id='root folder',
             ),
-            (
-                pytest.param(
-                    ['a'],
-                    ['excluded_file.rst', 'a/1.rst', 'a/2.rst', 'a/excluded_file.rst'],
-                    ['**a/excluded_file.rst'],
-                    {'', 'a', 'a/1.rst', 'a/2.rst', 'excluded_file.rst'},
-                    id='file in subdir, not in root',
-                )
+            pytest.param(
+                ['a'],
+                ['excluded_file.rst', 'a/1.rst', 'a/2.rst', 'a/excluded_file.rst'],
+                ['**a/excluded_file.rst'],
+                {'', 'a', 'a/1.rst', 'a/2.rst', 'excluded_file.rst'},
+                id='file in subdir, not in root',
             ),
-            (
-                pytest.param(
-                    ['b'],
-                    ['excluded_file.rst', 'b/1.rst', 'b/2.rst', 'b/excluded_file.rst'],
-                    ['**excluded_file.rst'],
-                    {'', 'b', 'b/1.rst', 'b/2.rst'},
-                    id='file in subdir and in root',
-                )
+            pytest.param(
+                ['b'],
+                ['excluded_file.rst', 'b/1.rst', 'b/2.rst', 'b/excluded_file.rst'],
+                ['**excluded_file.rst'],
+                {'', 'b', 'b/1.rst', 'b/2.rst'},
+                id='file in subdir and in root',
             ),
-            (
-                pytest.param(
-                    ['c'],
-                    ['1.rst', 'excluded_file.rst', 'c/2.rst', 'c/excluded_file.rst'],
-                    ['*/excluded_file.rst'],
-                    {'', '1.rst', 'c', 'c/2.rst', 'c/excluded_file.rst'},
-                    id='file in root but not in subdir',
-                )
+            pytest.param(
+                ['c'],
+                ['1.rst', 'excluded_file.rst', 'c/2.rst', 'c/excluded_file.rst'],
+                ['*/excluded_file.rst'],
+                {'', '1.rst', 'c', 'c/2.rst', 'c/excluded_file.rst'},
+                id='file in root but not in subdir',
             ),
-            (
-                pytest.param(
-                    [],
-                    ['bad_file.rst', 'bad_table.rst', 'bad_images.rst', 'good_file.rst'],
-                    ['**bad*'],
-                    {'', 'good_file.rst'},
-                    id='files with prefix/suffix',
-                )
+            pytest.param(
+                [],
+                ['bad_file.rst', 'bad_table.rst', 'bad_images.rst', 'good_file.rst'],
+                ['**bad*'],
+                {'', 'good_file.rst'},
+                id='files with prefix/suffix',
             ),
-            (
-                pytest.param(
-                    [],
-                    ['good_1.rst', 'good_2.rst', 'good_11.rst'],
-                    ['**good_?.rst'],
-                    {'', 'good_11.rst'},
-                    id='files with single-digit number',
-                )
+            pytest.param(
+                [],
+                ['good_1.rst', 'good_2.rst', 'good_11.rst'],
+                ['**good_?.rst'],
+                {'', 'good_11.rst'},
+                id='files with single-digit number',
             ),
-            (
-                pytest.param(
-                    ['d1', 'd2', 'excluded_folder'],
-                    ['d1/1.rst', 'd2/2.rst', 'excluded_folder/other.rst'],
-                    ['**excluded_folder**'],
-                    {'', 'd1', 'd1/1.rst', 'd2', 'd2/2.rst'},
-                    id='folders',
-                )
+            pytest.param(
+                ['d1', 'd2', 'excluded_folder'],
+                ['d1/1.rst', 'd2/2.rst', 'excluded_folder/other.rst'],
+                ['**excluded_folder**'],
+                {'', 'd1', 'd1/1.rst', 'd2', 'd2/2.rst'},
+                id='folders',
             ),
         ],
     )
@@ -387,4 +373,22 @@ class TestListFiles:
     ) -> None:
         setup_list_files_dir(tmp_path, folders, files)
         expected_paths = {Path('src', item) for item in expected}
-        assert _list_files(tmp_path, exclude_patterns) == expected_paths
+        assert _list_files(tmp_path, exclude_patterns, ['.rst']) == expected_paths
+
+    @pytest.mark.parametrize(
+        'source_suffixes, result',
+        [
+            pytest.param(['.md'], {'', '2.md'}, id='list, md'),
+            pytest.param(
+                {'.md': 'Markdown', '.rst': 'reStructuredText'},
+                {'', '2.md', '1.rst'},
+                id='dict, md+rst',
+            ),
+        ],
+    )
+    def test_list_files_process_source_suffixes(
+        self, tmp_path: Path, source_suffixes: list[str] | dict[str, str], result: set[str]
+    ) -> None:
+        setup_list_files_dir(tmp_path, [], ['1.rst', '2.md', '3.txt', '4.doc'])
+        expected = {Path('src', item) for item in result}
+        assert _list_files(tmp_path, [], source_suffixes) == expected
