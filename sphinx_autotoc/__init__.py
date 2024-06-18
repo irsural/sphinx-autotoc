@@ -415,8 +415,6 @@ def _list_files(
     """
     result = set()
     matcher = Matcher(exclude_patterns)
-    if type(source_suffixes) is dict:
-        source_suffixes = source_suffixes.keys()  # type: ignore[assignment]
     for root, _, files in os.walk(docs_directory):
         root_path = Path(root)
         relative_root = root_path.relative_to(docs_directory)
