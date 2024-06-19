@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from textwrap import dedent
+from typing import Dict, List, Set, Union
 
 import pytest
 from sphinx.config import Config
@@ -14,7 +15,7 @@ MAKE_INDEXES_TEST_PROJECTS_DIR = os.path.join(
 
 
 def activate_cfg(path: Path) -> Config:
-    cfg = Config.read(path)
+    cfg = Config.read(str(path))
     cfg.pre_init_values()
     cfg.init_values()
     cfg.add('sphinx_autotoc_trim_folder_numbers', False, 'html', bool)
@@ -185,7 +186,7 @@ class TestAutosummaryCompatibility:
             assert test_file_line in lines
 
 
-def prepare_search_paths(root: Path, file_list: list[str], folder_list: list[str]) -> list[Path]:
+def prepare_search_paths(root: Path, file_list: List[str], folder_list: List[str]) -> List[Path]:
     for folder in folder_list:
         (root / folder).mkdir()
 
@@ -248,7 +249,7 @@ class TestMakeSearchPaths:
         ], 'Папки должны идти в содержании раньше файлов'
 
 
-def setup_list_files_dir(tmp_path: Path, folders: list[str], files: list[str]) -> None:
+def setup_list_files_dir(tmp_path: Path, folders: List[str], files: List[str]) -> None:
     root = tmp_path / 'src'
     root.mkdir()
     for folder in folders:
@@ -366,10 +367,10 @@ class TestListFiles:
     def test_list_files_exclude_patterns_files(
         self,
         tmp_path: Path,
-        folders: list[str],
-        files: list[str],
-        exclude_patterns: list[str],
-        expected: list[str],
+        folders: List[str],
+        files: List[str],
+        exclude_patterns: List[str],
+        expected: List[str],
     ) -> None:
         setup_list_files_dir(tmp_path, folders, files)
         expected_paths = {Path('src', item) for item in expected}
@@ -387,7 +388,7 @@ class TestListFiles:
         ],
     )
     def test_list_files_process_source_suffixes(
-        self, tmp_path: Path, source_suffixes: list[str] | dict[str, str], result: set[str]
+        self, tmp_path: Path, source_suffixes: Union[List[str], Dict[str, str]], result: Set[str]
     ) -> None:
         setup_list_files_dir(tmp_path, [], ['1.rst', '2.md', '3.txt', '4.doc'])
         expected = {Path('src', item) for item in result}
