@@ -1,7 +1,7 @@
 import os
 from collections import defaultdict
 from pathlib import Path
-from typing import Iterator
+from typing import Dict, Iterator, List, Set, Tuple, Union
 
 from natsort import natsorted
 from sphinx.application import Sphinx
@@ -63,9 +63,9 @@ def make_indexes(docs_directory: Path, cfg: Config) -> None:
     src_path = docs_directory / 'src'
     _check_folder_existence(src_path)
     autosummary_flag = _check_autosummary_flag(cfg)
-    autosummary_dict: dict[Path, tuple[str, str]] = {}
+    autosummary_dict: Dict[Path, Tuple[str, str]] = {}
 
-    main_page_dirs: dict[Path, list[Path]] = {}  # toctree header: toctree links
+    main_page_dirs: Dict[Path, List[Path]] = {}  # toctree header: toctree links
 
     if not get_headers_from_subfolder:
         main_page_dirs = {src_path: []}
@@ -103,11 +103,11 @@ def _check_autosummary_flag(cfg: Config) -> bool:
 def _process_dir_and_files(
     src_path: Path,
     current_dir: Path,
-    current_dir_files: list[Path],
+    current_dir_files: List[Path],
     autosummary_flag: bool,
-    autosummary_dict: dict[Path, tuple[str, str]],
+    autosummary_dict: Dict[Path, Tuple[str, str]],
     get_headers_from_subfolder: bool,
-    main_page_dirs: dict[Path, list[Path]],
+    main_page_dirs: Dict[Path, List[Path]],
     trim_folder_numbers: bool,
 ) -> None:
     if autosummary_flag:
@@ -129,11 +129,11 @@ def _process_dir_and_files(
 
 
 def _update_main_page_dirs(
-    main_page_dirs: dict[Path, list[Path]],
+    main_page_dirs: Dict[Path, List[Path]],
     get_headers_from_subfolder: bool,
     current_dir: Path,
     src_path: Path,
-    current_dir_files: list[Path],
+    current_dir_files: List[Path],
 ) -> None:
     if get_headers_from_subfolder:
         if current_dir.parent == src_path:
@@ -152,7 +152,7 @@ def _check_folder_existence(folder: Path) -> None:
 
 
 def _replace_autosummary(
-    autosummary_dict: dict[Path, tuple[str, str]], docs_directory: Path, index: Path
+    autosummary_dict: Dict[Path, Tuple[str, str]], docs_directory: Path, index: Path
 ) -> None:
     """
     Меняет заголовок ссылки на autosummary на заголовок файла с директивой autosummary.
@@ -201,7 +201,7 @@ def _replace_autosummary_with_api_reference(
         f.truncate()
 
 
-def _parse_autosummary(file: Path) -> tuple[str, str] | None:
+def _parse_autosummary(file: Path) -> Union[Tuple[str, str], None]:
     """
     Парсит файл с директивой autosummary.
 
@@ -221,7 +221,7 @@ def _parse_autosummary(file: Path) -> tuple[str, str] | None:
 
 
 def _add_to_main_page(
-    dirs: dict[Path, list[Path]],
+    dirs: Dict[Path, List[Path]],
     main_page: str,
     trim_folder_numbers: bool,
     get_headers_from_subfolder: bool,
@@ -238,7 +238,7 @@ def _add_to_main_page(
     for path, docs in dirs.items():
         search_paths = _make_search_paths(path, docs)
         dirname = trim_leading_numbers(path.name) if trim_folder_numbers else path.name
-        str_search_paths: list[str] = []
+        str_search_paths: List[str] = []
         if get_headers_from_subfolder:
             for item in search_paths:
                 str_search_paths.append(f'src/{path.name}/{item}')
@@ -252,7 +252,7 @@ def _add_to_main_page(
     return main_page
 
 
-def _add_to_nav(path: Path, docs: list[Path], trim_folder_numbers: bool) -> None:
+def _add_to_nav(path: Path, docs: List[Path], trim_folder_numbers: bool) -> None:
     """
     Добавляет рядом с папкой её сервисный файл.
 
@@ -311,7 +311,7 @@ def _get_dir_index(path: Path) -> Path:
     return path / f'{SPHINX_SERVICE_FILE_PREFIX}.{path.name}.rst'
 
 
-def _make_search_paths(root: Path, f: list[Path]) -> list[Path]:
+def _make_search_paths(root: Path, f: List[Path]) -> List[Path]:
     """
     Создает пути к содержимому в папке.
 
@@ -348,7 +348,7 @@ def _make_search_paths(root: Path, f: list[Path]) -> list[Path]:
     return folder_paths_list + file_paths_list
 
 
-def _iter_dirs(docs_directory: Path, cfg: Config) -> Iterator[tuple[Path, list[Path]]]:
+def _iter_dirs(docs_directory: Path, cfg: Config) -> Iterator[Tuple[Path, List[Path]]]:
     """
     Итерируется по папке.
     Содержимое папки маршрутизируется и сортируется.
@@ -363,7 +363,7 @@ def _iter_dirs(docs_directory: Path, cfg: Config) -> Iterator[tuple[Path, list[P
         yield root, sub
 
 
-def _flatmap(docs_directory: Path, cfg: Config) -> dict[Path, set[Path]]:
+def _flatmap(docs_directory: Path, cfg: Config) -> Dict[Path, Set[Path]]:
     """
         Составляет маршруты файлов с искомыми суффиксами.
     Суффиксы файлов берутся из конфигурационного файла изначальной папки.
@@ -394,7 +394,7 @@ def _flatmap(docs_directory: Path, cfg: Config) -> dict[Path, set[Path]]:
     :param docs_directory: Папка с документацией.
     :return: Маршруты файлов в папке
     """
-    roots: dict[Path, set[Path]] = defaultdict(set)
+    roots: Dict[Path, Set[Path]] = defaultdict(set)
     for file in _list_files(docs_directory, cfg['exclude_patterns'], cfg['source_suffix']):
         if file.parent.name and (
             file.suffix in cfg.source_suffix or (docs_directory / file).is_dir()
@@ -404,8 +404,10 @@ def _flatmap(docs_directory: Path, cfg: Config) -> dict[Path, set[Path]]:
 
 
 def _list_files(
-    docs_directory: Path, exclude_patterns: list[str], source_suffixes: list[str] | dict[str, str]
-) -> set[Path]:
+    docs_directory: Path,
+    exclude_patterns: List[str],
+    source_suffixes: Union[List[str], Dict[str, str]],
+) -> Set[Path]:
     """
     Составляет список файлов в папках. Игнорирует файлы и папки, указанные в параметре
     exclude_patterns в конфигурации.
