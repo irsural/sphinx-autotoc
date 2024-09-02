@@ -275,9 +275,7 @@ def _add_to_nav(path: Path, docs: List[Path], trim_folder_numbers: bool) -> None
     with open(index_path.as_posix(), 'w', encoding='utf-8') as f:
         f.write(
             NAV_PATTERN.format(
-                dirname=dirname,
-                search_paths='\n   '.join(map(str, search_paths)),
-                includes=content,
+                dirname=dirname, search_paths='\n   '.join(map(str, search_paths)), includes=content
             )
         )
 
@@ -342,8 +340,7 @@ def _make_search_paths(root: Path, f: List[Path]) -> List[Path]:
 
     file_paths_list = natsorted(file_paths, key=lambda x: Path(x).stem)
     folder_paths_list = natsorted(
-        folder_paths,
-        key=lambda x: Path(x).stem.replace(f'{SPHINX_SERVICE_FILE_PREFIX}.', ''),
+        folder_paths, key=lambda x: Path(x).stem.replace(f'{SPHINX_SERVICE_FILE_PREFIX}.', '')
     )
     return folder_paths_list + file_paths_list
 

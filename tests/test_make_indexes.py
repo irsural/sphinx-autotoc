@@ -157,10 +157,7 @@ class TestAutosummaryCompatibility:
     @pytest.mark.parametrize(
         'test_file_path, test_file_line',
         [
-            (
-                project_path / 'autotoc.rst',
-                '   L1header <src/1. level1/_autosummary/Level1>\n',
-            ),
+            (project_path / 'autotoc.rst', '   L1header <src/1. level1/_autosummary/Level1>\n'),
             (
                 project_path / 'src/1. level1/autotoc.1. level1.rst',
                 '   L1header <_autosummary/Level1>\n',
@@ -221,20 +218,11 @@ class TestMakeSearchPaths:
         )
 
         search_paths = _make_search_paths(tmp_path, full_file_list)
-        assert search_paths == [
-            Path('50file.rst'),
-            Path('100file.rst'),
-            Path('200file.rst'),
-        ]
+        assert search_paths == [Path('50file.rst'), Path('100file.rst'), Path('200file.rst')]
 
     def test_search_paths_folders_before_files(self, tmp_path: Path) -> None:
         full_file_list = prepare_search_paths(
-            tmp_path,
-            [
-                'file1.rst',
-                'file2.rst',
-            ],
-            ['folder1', 'folder2'],
+            tmp_path, ['file1.rst', 'file2.rst'], ['folder1', 'folder2']
         )
 
         search_paths = _make_search_paths(tmp_path, full_file_list)
@@ -263,11 +251,7 @@ class TestListFiles:
         setup_list_files_dir(
             tmp_path,
             ['folder1/folder11', 'folder1/folder12'],
-            [
-                'folder1/1.rst',
-                'folder1/folder11/11.rst',
-                'folder1/folder12/12.rst',
-            ],
+            ['folder1/1.rst', 'folder1/folder11/11.rst', 'folder1/folder12/12.rst'],
         )
         set = _list_files(tmp_path, [], ['.rst'])
         expected = {
